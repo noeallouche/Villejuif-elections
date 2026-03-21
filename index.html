@@ -484,6 +484,9 @@ function bvColor(row,m){
 function buildColorExpr(){
   const e=['match',['get','id_bv']];
   (CUR_DATA||[]).forEach(r=>e.push(r.bv,bvColor(r,mode)));
+  // MapLibre exige au moins 4 arguments (match, input, case, default)
+  // Si pas de données, on retourne une couleur fixe
+  if(e.length<4) return '#444';
   e.push('#444');return e;
 }
 function updateColors(){if(!map||!map.getSource('bv'))return;map.setPaintProperty('bv-fill','fill-color',buildColorExpr());}
