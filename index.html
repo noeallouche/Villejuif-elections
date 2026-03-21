@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Observatoire électoral — Villejuif</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#141518;--sf:#1a1b1f;--tx:#d4d0ca;--ts:#a09a90;--tm:#706b63;
+  --ac:#b8282e;--acl:rgba(184,40,46,.1);
+  --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.14);
+  --r:8px;--rs:5px;--panel:360px;--nav:52px;
+  --fd:'Cormorant Garamond',Georgia,serif;
+  --fb:'DM Sans',-apple-system,sans-serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;height:var(--nav);z-index:40;background:var(--bg);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 12px;gap:8px}
+.brand{font-family:var(--fd);font-size:18px;font-weight:700;color:#fff;white-space:nowrap;flex-shrink:0}
+.brand span{color:var(--ac);font-style:italic}
+.nsep{width:1px;height:24px;background:rgba(255,255,255,.1);flex-shrink:0}
+/* ELECTION SELECTOR */
+.esel-wrap{position:relative;flex-shrink:0}
+.esel-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#fff;font-family:var(--fb);white-space:nowrap;transition:all .2s}
+.esel-btn:hover,.esel-btn.open{background:var(--acl);border-color:var(--ac)}
+.esel-btn .arr{font-size:8px;opacity:.5;transition:transform .2s}
+.esel-btn.open .arr{transform:rotate(180deg)}
+.esel-drop{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#1e1f24;border:1px solid var(--bd2);border-radius:var(--r);min-width:270px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100}
+.esel-drop.open{display:block}
+.eg-title{padding:7px 12px 3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ac)}
+.ei{display:flex;justify-content:space-between;align-items:center;width:100%;padding:7px 12px;font-size:11px;font-weight:500;color:rgba(255,255,255,.7);background:transparent;border:none;text-align:left;cursor:pointer;font-family:var(--fb);transition:background .15s}
+.ei:hover{background:rgba(255,255,255,.06);color:#fff}
+.ei.active{color:#fff;font-weight:700;background:var(--acl)}
+.ei-r{display:flex;gap:8px;align-items:center;font-size:9px;color:var(--tm)}
+/* MAP MODES */
+.nmodes{display:flex;gap:2px;overflow-x:auto;flex:1;scrollbar-width:none}
+.nmodes::-webkit-scrollbar{display:none}
+.mbtn{background:transparent;color:rgba(255,255,255,.45);border:none;border-bottom:2px solid transparent;padding:6px 10px 8px;font-family:var(--fb);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.mbtn:hover{color:rgba(255,255,255,.8)}
+.mbtn.active{color:#fff;border-bottom-color:var(--ac);font-weight:600}
+/* MAP */
+#map{position:fixed;top:var(--nav);left:0;right:var(--panel);bottom:28px;z-index:0}
+/* PANEL */
+#panel{position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:20}
+#tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0}
+.tab{flex:1;padding:9px 4px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.35);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:rgba(255,255,255,.6)}
+.tab.active{color:#fff;border-bottom-color:var(--ac)}
+#tc{flex:1;overflow-y:auto}
+#tc::-webkit-scrollbar{width:4px}
+#tc::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.pane{display:none;padding:14px 16px}
+.pane.active{display:block}
+.ph2{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:12px}
+/* KPIS */
+.kg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.kc{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:var(--r);padding:10px 4px;text-align:center}
+.kv{font-family:var(--fd);font-size:22px;font-weight:700;color:#fff;line-height:1.1}
+.kl{font-size:8px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
+/* BALANCE BAR */
+.bb{height:10px;border-radius:5px;overflow:hidden;display:flex;margin-bottom:5px}
+.bbl{display:flex;flex-wrap:wrap;gap:3px 8px;font-size:10px;color:var(--tm);font-weight:500;margin-bottom:10px}
+/* RESULT BARS */
+.rb{display:flex;align-items:baseline;gap:5px;padding:5px 0 8px;border-bottom:1px solid var(--bd);font-size:11px;position:relative;opacity:0;animation:fsi .3s ease forwards;cursor:pointer;border-radius:4px;transition:background .15s}
+.rb:last-child{border-bottom:none}
+.rb:hover{background:rgba(255,255,255,.04)}
+.rb.ck::after{content:"→";position:absolute;right:2px;top:7px;font-size:10px;color:rgba(255,255,255,.2)}
+.rb.ck:hover::after{color:rgba(255,255,255,.6)}
+@keyframes fsi{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
+.rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp{width:44px;text-align:right;font-family:var(--fd);font-size:14px;font-weight:600;flex-shrink:0}
+.rv{width:46px;text-align:right;font-size:10px;color:var(--tm);flex-shrink:0}
+.rt{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.04);border-radius:1px}
+.rf{height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,.61,.36,1)}
+.nbdg{font-size:8px;font-weight:700;opacity:.5;flex-shrink:0}
+/* CANDIDATE PANE */
+#cp{display:none;padding:0}
+.cpbk{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 11px;cursor:pointer;font-size:11px;color:rgba(255,255,255,.5);font-family:inherit;transition:all .2s;font-weight:500;margin-bottom:10px}
+.cpbk:hover{background:var(--acl);color:var(--ac);border-color:var(--ac)}
+.cph{padding:14px 16px 12px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--sf);z-index:5}
+.cpnm{font-size:18px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:3px}
+.cpm{font-size:10px;color:var(--tm)}
+.cppill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.05em;margin-left:6px}
+.cpb{padding:14px 16px}
+.cps{margin-bottom:18px}
+.cpst{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:10px}
+.bvr{display:flex;align-items:center;gap:7px;padding:4px 6px;border-radius:var(--rs);cursor:pointer;transition:background .15s;font-size:11px;position:relative}
+.bvr:hover{background:rgba(255,255,255,.04)}
+.bvr-i{width:18px;text-align:right;font-size:9px;color:var(--tm);flex-shrink:0;font-weight:600}
+.bvr-n{flex:1;font-size:11px}
+.bvr-l{font-size:9px;color:var(--tm)}
+.bvr-p{font-family:var(--fd);font-size:14px;font-weight:700;flex-shrink:0;min-width:44px;text-align:right}
+.bvr-b{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.04);border-radius:1px}
+.bvr-f{height:100%;border-radius:1px}
+.ccr{display:flex;align-items:center;gap:7px;padding:4px 0}
+.ccd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ccn{flex:1;font-size:10px;color:var(--ts)}
+.ccg{position:relative;width:64px;height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;flex-shrink:0}
+.ccc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.15)}
+.ccf{position:absolute;top:0;height:100%;border-radius:4px}
+.ccv{font-weight:700;min-width:48px;text-align:right;font-size:11px;flex-shrink:0}
+/* SIMULATOR */
+.sh{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:10px;line-height:1.5}
+.fi{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--rs);cursor:pointer;transition:background .15s;font-size:12px}
+.fi:hover{background:rgba(255,255,255,.03)}
+.fi input{width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.fd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.fi .fn{flex:1}
+.fi .fp{font-size:10px;color:var(--tm);font-weight:700;flex-shrink:0;min-width:36px;text-align:right}
+.fi.excl{opacity:.35;text-decoration:line-through}
+#rbtn{display:block;width:100%;margin-top:8px;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bd2);border-radius:var(--rs);font-size:11px;font-weight:600;font-family:inherit;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+#rbtn:hover{background:var(--acl);border-color:var(--ac);color:var(--ac)}
+/* CORRELATIONS */
+.cr{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cl{flex:1;font-size:10px;color:var(--ts);line-height:1.3}
+.cg{position:relative;width:70px;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;flex-shrink:0}
+.cgc{position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.15)}
+.cgf{position:absolute;top:0;height:100%;border-radius:4px}
+.cv{font-weight:700;min-width:52px;text-align:right;font-size:11px;flex-shrink:0}
+.cs{font-size:9px;color:var(--tm);min-width:56px;text-align:right;flex-shrink:0}
+.cst{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,.3);margin:14px 0 8px;padding-top:10px;border-top:1px solid var(--bd)}
+/* BV GRID */
+.bvc{background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 9px;cursor:pointer;transition:all .2s}
+.bvc:hover,.bvc.active{border-color:var(--ac);background:var(--acl)}
+.bvcn{font-size:10px;font-weight:700;color:#fff;margin-bottom:2px}
+.bvcw{display:flex;align-items:center;gap:4px;font-size:10px}
+.bvcd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.bvcp{font-family:var(--fd);font-size:12px;font-weight:600;margin-left:auto}
+.spark{display:flex;height:3px;border-radius:1px;overflow:hidden;margin-top:4px}
+/* BV DETAIL */
+#bvd{display:none;position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.22,.61,.36,1);z-index:30}
+#bvd.vis{display:block;transform:translateX(0)}
+.dcl{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:11px;color:rgba(255,255,255,.5);font-family:inherit;transition:all .2s;font-weight:500}
+.dcl:hover{background:var(--acl);color:var(--ac);border-color:var(--ac)}
+/* LEGENDS */
+#leg,#pleg,#cleg{position:fixed;bottom:36px;left:14px;z-index:10;background:rgba(22,23,27,.94);backdrop-filter:blur(12px);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+#leg{min-width:190px;max-height:280px;overflow-y:auto}
+#pleg,#cleg{display:none}
+#leg h4,#pleg h4,#cleg h4{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:8px}
+.li{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;color:var(--ts)}
+.ls{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.lc{font-size:10px;color:var(--tm);margin-left:auto}
+.gb{width:180px;height:8px;border-radius:4px;margin-bottom:4px}
+.gl{display:flex;justify-content:space-between;font-size:9px;color:var(--tm)}
+/* POPUP */
+.maplibregl-popup-content{background:rgba(20,21,25,.97)!important;backdrop-filter:blur(16px)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:var(--r)!important;padding:11px 14px!important;box-shadow:0 4px 24px rgba(0,0,0,.35)!important;font-family:var(--fb)!important;font-size:12px!important;max-width:270px!important;color:#d4d0ca!important}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:rgba(20,21,25,.97)!important}
+.maplibregl-popup-close-button{color:rgba(255,255,255,.35)!important}
+.tt-t{font-weight:700;font-size:13px;margin-bottom:3px;color:#fff}
+.tt-m{font-size:10px;color:var(--tm);margin-bottom:6px}
+.tt-r{display:flex;align-items:center;gap:5px;margin-bottom:2px;font-size:11px}
+.tt-d{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+/* FOOTER */
+#ft{position:fixed;bottom:0;left:0;right:var(--panel);height:28px;z-index:10;background:rgba(18,19,22,.93);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.22)}
+/* LOADING */
+#ld{position:fixed;inset:0;background:#0d0f14;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity .4s}
+#ld.h{opacity:0;pointer-events:none}
+.sp{width:34px;height:34px;border:1.5px solid rgba(255,255,255,.07);border-top-color:var(--ac);border-radius:50%;animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.st{margin-top:16px;font-size:11px;color:rgba(255,255,255,.3)}
+@media(max-width:900px){
+  :root{--panel:0px;--nav:80px}
+  #map{right:0;bottom:0}
+  #nav{flex-wrap:wrap;padding:4px 8px;gap:3px 6px;height:auto}
+  #panel{top:auto;bottom:0;left:0;width:100%;max-height:40vh;border-top:1px solid var(--bd);border-left:none;border-radius:16px 16px 0 0;background:rgba(22,23,27,.97);backdrop-filter:blur(12px)}
+  #bvd{width:100%;top:auto;bottom:0;height:68vh;border-radius:16px 16px 0 0}
+  #ft{display:none}
+  #leg,#pleg,#cleg{bottom:auto;top:calc(var(--nav)+8px);left:8px;padding:7px 10px}
+}
+</style>
+</head>
+<body>
+<div id="ld"><div class="sp"></div><div class="st" id="lt">Chargement…</div></div>
+
+<nav id="nav">
+  <div class="brand">Villejuif <span>élections</span></div>
+  <div class="nsep"></div>
+  <div class="esel-wrap">
+    <button class="esel-btn" id="eb" onclick="toggleDrop()">
+      <span id="el">—</span><span class="arr">▼</span>
+    </button>
+    <div class="esel-drop" id="ed"></div>
+  </div>
+  <div class="nsep"></div>
+  <div class="nmodes">
+    <button class="mbtn active" data-mode="winner"        onclick="setMode('winner')">Liste en tête</button>
+    <button class="mbtn"        data-mode="participation" onclick="setMode('participation')">Participation</button>
+    <button class="mbtn"        data-mode="gd"            onclick="setMode('gd')">Ratio G/D</button>
+    <button class="mbtn"        data-mode="frag"          onclick="setMode('frag')">Fragmentation</button>
+  </div>
+</nav>
+
+<div id="map"></div>
+<div id="leg"></div>
+<div id="pleg"><h4 id="pl-t">Participation</h4><div class="gb" id="pl-g"></div><div class="gl" id="pl-l"></div></div>
+<div id="cleg"><h4 id="cl-t">Score</h4><div class="gb" id="cl-g"></div><div class="gl" id="cl-l"></div></div>
+
+<div id="panel">
+  <div id="tabs">
+    <div class="tab active" onclick="sTab('r')">Résultats</div>
+    <div class="tab"        onclick="sTab('b')">Bureaux</div>
+    <div class="tab"        onclick="sTab('s')">Simulateur</div>
+    <div class="tab"        onclick="sTab('c')">Corrélations</div>
+  </div>
+  <div id="tc">
+    <div class="pane active" id="pane-r">
+      <div class="ph2" id="p-title">Résultats globaux</div>
+      <div class="kg" id="g-k"></div>
+      <div id="g-b"></div>
+      <div id="g-r"></div>
+    </div>
+    <div class="pane" id="pane-b">
+      <div class="ph2">34 bureaux de vote</div>
+      <div id="bvg" style="display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
+    </div>
+    <div class="pane" id="pane-s">
+      <div class="ph2">Simulateur</div>
+      <p class="sh">Décochez une liste pour simuler sa non-présence.</p>
+      <div id="fc"></div>
+      <button id="rbtn" onclick="resetF()">↺ Tout réafficher</button>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">
+        <div class="ph2" style="margin-bottom:8px">Résultats simulés</div>
+        <div class="kg" id="s-k"></div>
+        <div id="s-b"></div>
+        <div id="s-r"></div>
+      </div>
+    </div>
+    <div class="pane" id="pane-c">
+      <div class="ph2">Corrélations de vote</div>
+      <div id="cc"></div>
+    </div>
+    <div id="cp">
+      <div class="cph">
+        <button class="cpbk" onclick="closeCP()">← Retour aux résultats</button>
+        <div class="cpnm" id="cp-n"></div>
+        <div class="cpm" id="cp-m"></div>
+      </div>
+      <div class="cpb" id="cp-b"></div>
+    </div>
+  </div>
+</div>
+
+<div id="bvd">
+  <div style="padding:14px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span class="ph2" id="bvd-t" style="margin:0">Bureau</span>
+      <button class="dcl" onclick="closeBV()">← Retour</button>
+    </div>
+    <div id="bvd-m" style="font-size:11px;color:var(--tm);margin-bottom:12px;line-height:1.5"></div>
+    <div class="kg" id="bvd-k"></div>
+    <div id="bvd-b"></div>
+    <div id="bvd-r"></div>
+  </div>
+</div>
+<div id="ft"></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+// When hosted on GitHub Pages, set DATA_BASE to '' (same folder).
+// For local dev without a server, you can inline data or use a dev server.
+const DATA_BASE = './data/';
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let GEO=null, ELECTIONS=[], CUR_EID=null, CUR_DATA=null;
+let mode='winner', excl=new Set(), curCand=null;
+let map, popup, hovId=null;
+
+// ── UTILS ───────────────────────────────────────────────────────────────────
+const fP=v=>v.toFixed(1).replace('.',',')+' %';
+const fN=v=>v.toLocaleString('fr-FR');
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ctxt=hex=>{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(.299*r+.587*g+.114*b)>140?'#111':'#fff';};
+const blend=(hex,t)=>{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgb(${Math.round(30+(r-30)*t)},${Math.round(30+(g-30)*t)},${Math.round(35+(b-35)*t)})`;};
+function pearson(xs,ys){const n=xs.length;if(n<3)return 0;let sx=0,sy=0,sxy=0,sx2=0,sy2=0;for(let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxy+=xs[i]*ys[i];sx2+=xs[i]*xs[i];sy2+=ys[i]*ys[i];}const d=Math.sqrt((n*sx2-sx*sx)*(n*sy2-sy*sy));return d===0?0:(n*sxy-sx*sy)/d;}
+
+// ── ELECTION ACCESSORS ───────────────────────────────────────────────────────
+const EL=()=>ELECTIONS.find(e=>e.id===CUR_EID)||{};
+const cands=()=>EL().candidates||[];
+const cand=n=>cands().find(c=>c.nuance===n);
+const ccolor=n=>(cand(n)||{color:'#78909C'}).color;
+const cname=n=>(cand(n)||{nom:n}).nom;
+const lieauOf=k=>{const f=GEO&&GEO.features.find(f=>f.properties.id_bv===String(k));return f?f.properties.lieu:'';};
+
+// ── CSV PARSE ────────────────────────────────────────────────────────────────
+function parseCSV(text){
+  const lines=text.trim().split('\n').filter(l=>!l.startsWith('#')&&l.trim());
+  const headers=lines[0].split(',').map(h=>h.trim());
+  return lines.slice(1).map(l=>{
+    const vals=l.split(',');
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=vals[i]?vals[i].trim():'0');
+    // Numeric coerce
+    ['ins','vot','exp','bl','nu'].forEach(k=>obj[k]=parseInt(obj[k])||0);
+    headers.slice(5).forEach(h=>obj[h]=parseInt(obj[h])||0);
+    return obj;
+  });
+}
+
+// ── BV COMPUTE ───────────────────────────────────────────────────────────────
+function computeBV(row){
+  const cs=cands();
+  let lists=cs.filter(c=>!excl.has(c.nuance)).map(c=>{
+    const v=parseInt(row[c.nuance])||0;
+    return{nuance:c.nuance,nom:c.nom,color:c.color,bloc:c.bloc,voix:v,pct:0};
+  });
+  const exp=lists.reduce((s,l)=>s+l.voix,0);
+  lists.forEach(l=>l.pct=exp>0?l.voix/exp*100:0);
+  lists.sort((a,b)=>b.voix-a.voix);
+  const winner=lists[0]||null;
+  let gr=0,g=0,cen=0,dr=0,au=0;
+  lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else au+=l.voix;});
+  const part=row.ins>0?row.vot/row.ins*100:0;
+  let sq=0;if(exp>0)lists.forEach(l=>{const p=l.voix/exp;sq+=p*p;});
+  return{key:row.bv,lieu:row.lieu||lieauOf(row.bv),inscrits:row.ins,votants:row.vot,exprimes:exp,blancs:row.bl,nuls:row.nu,participation:part,lists,winner,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixAu:au,enp:sq>0?1/sq:1};
+}
+
+function agg(){
+  if(!CUR_DATA)return{inscrits:0,votants:0,exprimes:0,blancs:0,nuls:0,participation:0,lists:[],voixGR:0,voixG:0,voixCen:0,voixDr:0,voixAu:0};
+  let ins=0,vot=0,exp=0,bl=0,nu=0;
+  const vm={};
+  CUR_DATA.forEach(row=>{
+    const bv=computeBV(row);
+    ins+=bv.inscrits;vot+=bv.votants;exp+=bv.exprimes;bl+=bv.blancs;nu+=bv.nuls;
+    bv.lists.forEach(l=>vm[l.nuance]=(vm[l.nuance]||0)+l.voix);
+  });
+  const lists=Object.entries(vm).map(([nuance,voix])=>({nuance,voix,nom:cname(nuance),color:ccolor(nuance),pct:exp>0?voix/exp*100:0,bloc:(cand(nuance)||{bloc:'autre'}).bloc})).sort((a,b)=>b.voix-a.voix);
+  const part=ins>0?vot/ins*100:0;
+  let gr=0,g=0,cen=0,dr=0,au=0;
+  lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else au+=l.voix;});
+  return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixAu:au};
+}
+
+// ── RENDER HELPERS ───────────────────────────────────────────────────────────
+function rKPIs(el,d){
+  const p=d.inscrits>0?d.votants/d.inscrits*100:0;
+  el.innerHTML=`<div class="kc"><div class="kv">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;
+}
+function rBal(el,d){
+  const T=d.exprimes||1;
+  const segs=[[d.voixGR/T*100,'#C62828','G. rad.'],[d.voixG/T*100,'#EC407A','Gauche'],[d.voixCen/T*100,'#FF8F00','Centre'],[d.voixDr/T*100,'#1565C0','Droite'],[d.voixAu/T*100,'#78909C','Autres']].filter(s=>s[0]>0.5);
+  el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Équilibre politique</div><div class="bb">${segs.map(s=>`<div style="width:${s[0]}%;background:${s[1]}" title="${s[2]} ${fP(s[0])}"></div>`).join('')}</div><div class="bbl">${segs.map(s=>`<span style="color:${s[1]}">${s[2]} ${fP(s[0])}</span>`).join('')}</div>`;
+}
+function rBars(el,lists,exp,anim=true,click=false){
+  let h='';
+  lists.forEach((l,i)=>{
+    const pct=exp>0?l.voix/exp*100:0,col=l.color||ccolor(l.nuance);
+    const an=anim?`style="animation-delay:${i*.03}s"`:'';
+    const cl=click?`class="rb ck" onclick="openCP('${esc(l.nuance)}')" title="Fiche ${esc(l.nom)}"`:`class="rb"`;
+    h+=`<div ${cl} ${an}><span class="nbdg" style="color:${col};opacity:.7">${esc(l.nuance)}</span><span class="rn" style="color:${col};font-weight:600">${esc(l.nom)}</span><span class="rp">${fP(pct)}</span><span class="rv">${fN(l.voix)}</span><div class="rt"><div class="rf" style="width:${pct}%;background:${col}"></div></div></div>`;
+  });
+  el.innerHTML=h||'<div style="color:var(--tm);font-size:11px;padding:8px 0">Aucune liste.</div>';
+}
+
+// ── GLOBAL PANEL ─────────────────────────────────────────────────────────────
+function renderGlobal(){
+  const el=EL(),a=agg();
+  document.getElementById('p-title').textContent=`Résultats — ${el.label||''}`;
+  document.getElementById('ft').textContent=`${el.label||''} · ${el.date||''} · 34 bureaux · ${fN(el.inscrits||0)} inscrits`;
+  rKPIs(document.getElementById('g-k'),a);
+  rBal(document.getElementById('g-b'),a);
+  rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);
+}
+
+// ── BV GRID ──────────────────────────────────────────────────────────────────
+function renderBVGrid(){
+  const g=document.getElementById('bvg');
+  if(!CUR_DATA){g.innerHTML='';return;}
+  let h='';
+  CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach(row=>{
+    const bv=computeBV(row);const w=bv.winner,col=w?w.color:'#555';
+    const sp=bv.lists.slice(0,5).map(l=>`<div style="flex:${bv.exprimes>0?l.voix/bv.exprimes*100:0}%;background:${l.color};height:100%"></div>`).join('');
+    h+=`<div class="bvc" data-bv="${row.bv}" onclick="showBV('${row.bv}')"><div class="bvcn">Bureau ${parseInt(row.bv).toString().padStart(2,'0')}</div><div class="bvcw"><div class="bvcd" style="background:${col}"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;color:rgba(255,255,255,.55)">${w?esc(w.nom.split(' ').slice(-1)[0]):'-'}</span><span class="bvcp" style="color:${col}">${w?fP(w.pct):'-'}</span></div><div class="spark">${sp}</div></div>`;
+  });
+  g.innerHTML=h;
+}
+
+// ── SIMULATOR ────────────────────────────────────────────────────────────────
+function buildFC(){
+  const a=agg();
+  let h='';
+  a.lists.forEach(l=>{
+    const checked=excl.has(l.nuance)?'':'checked',ex=excl.has(l.nuance)?'excl':'';
+    h+=`<label class="fi ${ex}" data-n="${esc(l.nuance)}"><input type="checkbox" ${checked} style="accent-color:${l.color}" onchange="onFC('${esc(l.nuance)}',this.checked)"><div class="fd" style="background:${l.color}"></div><span class="fn">${esc(l.nom)}</span><span class="nbdg" style="color:${l.color};opacity:.45">${esc(l.nuance)}</span><span class="fp" data-fp="${esc(l.nuance)}">${fP(l.pct)}</span></label>`;
+  });
+  document.getElementById('fc').innerHTML=h;
+  rSimResults();
+}
+function onFC(n,v){if(v)excl.delete(n);else excl.add(n);document.querySelector(`.fi[data-n="${n}"]`)?.classList.toggle('excl',!v);recalc();}
+function resetF(){excl.clear();document.querySelectorAll('#fc input').forEach(c=>c.checked=true);document.querySelectorAll('.fi').forEach(f=>f.classList.remove('excl'));recalc();}
+function recalc(){
+  rSimResults();if(!curCand)updateColors();renderBVGrid();
+  if(mode==='winner'&&!curCand)renderWinLeg();
+  const a=agg();a.lists.forEach(l=>{const e=document.querySelector(`[data-fp="${l.nuance}"]`);if(e)e.textContent=fP(l.pct);});
+  excl.forEach(n=>{const e=document.querySelector(`[data-fp="${n}"]`);if(e)e.textContent='--';});
+}
+function rSimResults(){const a=agg();rKPIs(document.getElementById('s-k'),a);rBal(document.getElementById('s-b'),a);rBars(document.getElementById('s-r'),a.lists,a.exprimes);}
+
+// ── CANDIDATE PANE ────────────────────────────────────────────────────────────
+function openCP(nuance){
+  curCand=nuance;
+  const c=cand(nuance)||{},col=c.color||'#78909C',nm=cname(nuance),tc=ctxt(col);
+  const keys=CUR_DATA||[];
+  const gv=keys.reduce((s,r)=>s+(parseInt(r[nuance])||0),0);
+  const ge=keys.reduce((s,r)=>s+(r.exp||0),0);
+  const gp=ge>0?gv/ge*100:0;
+  const scores=keys.map(r=>({key:r.bv,lieu:r.lieu||lieauOf(r.bv),v:parseInt(r[nuance])||0,pct:r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0})).sort((a,b)=>b.pct-a.pct);
+  const mx=scores[0]?scores[0].pct:1;
+  const corrs=cands().filter(x=>x.nuance!==nuance).map(o=>{
+    const xs=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0);
+    const ys=keys.map(r=>r.exp>0?(parseInt(r[o.nuance])||0)/r.exp*100:0);
+    return{nuance:o.nuance,nom:o.nom,color:o.color,r:pearson(xs,ys)};
+  }).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  document.getElementById('cp-n').innerHTML=`<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>${esc(nm)}<span class="cppill" style="background:${col};color:${tc}">${esc(nuance)}</span>`;
+  document.getElementById('cp-m').textContent=`${fN(gv)} voix · ${fP(gp)} des exprimés`;
+  const best=scores[0],worst=scores[scores.length-1];
+  let body=`<div class="cps"><div class="cpst">Chiffres clés</div><div class="kg"><div class="kc"><div class="kv" style="color:${col}">${fP(gp)}</div><div class="kl">Score global</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(best?best.pct:0)}</div><div class="kl">Meilleur BV</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(worst?worst.pct:0)}</div><div class="kl">Moins bon BV</div></div></div></div>`;
+  body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir le bureau</div>`;
+  scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0;const above=bv.pct>=gp;const rc=above?col:'rgba(255,255,255,.35)';body+=`<div class="bvr" onclick="showBV('${bv.key}')"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span><span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
+  body+=`</div>`;
+  if(corrs.length>0){
+    body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;
+    corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?'#1565C0':'#C62828';const left=cr.r>=0?50:50-abs*50,w=abs*50;const tc2=ctxt(cr.color);const str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});
+    body+=`</div>`;
+  }
+  document.getElementById('cp-b').innerHTML=body;
+  document.querySelectorAll('.pane').forEach(p=>{p.style.display='none';p.classList.remove('active');});
+  document.getElementById('cp').style.display='block';
+  document.getElementById('tc').scrollTop=0;
+  setCandMode(nuance,col,nm,mx,gp);
+}
+function closeCP(){
+  curCand=null;document.getElementById('cp').style.display='none';
+  const ns=['r','b','s','c'],tabs=document.querySelectorAll('.tab');
+  tabs.forEach((t,i)=>{if(t.classList.contains('active')){const p=document.getElementById('pane-'+ns[i]);if(p){p.style.display='';p.classList.add('active');}}});
+  setMode(mode);
+}
+function setCandMode(nuance,col,nm,mx,avg){
+  const e=['match',['get','id_bv']];
+  (CUR_DATA||[]).forEach(r=>{const v=parseInt(r[nuance])||0,t=r.exp>0&&mx>0?(v/r.exp*100)/mx:0;e.push(r.bv,blend(col,t));});
+  e.push('#1e1e23');
+  if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);
+  document.getElementById('leg').style.display='none';document.getElementById('pleg').style.display='none';
+  const cl=document.getElementById('cleg');cl.style.display='';
+  document.getElementById('cl-t').textContent=`${nm} — intensité`;document.getElementById('cl-t').style.color=col;
+  document.getElementById('cl-g').style.background=`linear-gradient(to right,#1e1e23,${col})`;
+  document.getElementById('cl-l').innerHTML=`<span>0 %</span><span>${fP(avg)} moy.</span><span>${fP(mx)} max</span>`;
+}
+
+// ── BV DETAIL ────────────────────────────────────────────────────────────────
+function showBV(key){
+  const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return;
+  const bv=computeBV(row);
+  document.getElementById('bvd-t').textContent=`Bureau ${parseInt(key).toString().padStart(2,'0')}`;
+  document.getElementById('bvd-m').innerHTML=`${bv.lieu?`<strong>${esc(bv.lieu)}</strong><br>`:''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;
+  rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);
+  document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
+  const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
+}
+function closeBV(){const d=document.getElementById('bvd');d.classList.remove('vis');setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function sTab(name){
+  if(curCand)closeCP();
+  const ns=['r','b','s','c'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ns[i]===name));
+  document.querySelectorAll('.pane').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='c')renderCorr();
+}
+
+// ── MAP COLORS ────────────────────────────────────────────────────────────────
+function bvColor(row,m){
+  const bv=computeBV(row);
+  if(m==='winner')return bv.winner?bv.winner.color:'#444';
+  if(m==='participation'){const p=bv.participation,t=Math.max(0,Math.min(1,(p-35)/35));if(t<.33){const s=t/.33;return`rgb(${Math.round(187-s*87)},${Math.round(222-s*40)},255)`}if(t<.66){const s=(t-.33)/.33;return`rgb(${Math.round(100-s*70)},${Math.round(182-s*71)},${Math.round(241-s*40)})`}const s=(t-.66)/.34;return`rgb(${Math.round(30-s*17)},${Math.round(111-s*40)},${Math.round(201-s*40)})`;}
+  if(m==='gd'){const tg=bv.voixGR+bv.voixG,tot=tg+bv.voixDr;if(!tot)return'#444';const r=tg/tot;if(r>=.5){const t=(r-.5)*2;return`rgb(255,${Math.round(255-t*219)},${Math.round(255-t*188)})`}const t=(.5-r)*2;return`rgb(${Math.round(255-t*234)},${Math.round(255-t*154)},${Math.round(255-t*63)})`;}
+  if(m==='frag'){const t=Math.max(0,Math.min(1,(bv.enp-2)/5));return`rgb(${Math.round(t*156)},${Math.round(200-t*161)},${Math.round(83+t*79)})`;}
+  return'#444';
+}
+function buildColorExpr(){
+  const e=['match',['get','id_bv']];
+  (CUR_DATA||[]).forEach(r=>e.push(r.bv,bvColor(r,mode)));
+  e.push('#444');return e;
+}
+function updateColors(){if(!map||!map.getSource('bv'))return;map.setPaintProperty('bv-fill','fill-color',buildColorExpr());}
+
+function setMode(m){
+  mode=m;if(curCand)closeCP();
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  document.getElementById('leg').style.display='none';document.getElementById('pleg').style.display='none';document.getElementById('cleg').style.display='none';
+  if(m==='winner')renderWinLeg();
+  else if(m==='participation'){const pl=document.getElementById('pleg');pl.style.display='';const avg=(EL().participation||0).toFixed(1).replace('.',',');document.getElementById('pl-t').textContent=`Participation — moy. ${avg} %`;document.getElementById('pl-g').style.background='linear-gradient(to right,#bbdefb,#64b5f6,#1e88e5,#0d47a1)';document.getElementById('pl-l').innerHTML='<span>35 %</span><span>52 %</span><span>70 %</span>';}
+  else if(m==='gd'){const lg=document.getElementById('leg');lg.style.display='';lg.innerHTML='<h4>Gauche / Droite</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#D32F2F,#fff,#1565C0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Gauche</span><span>50/50</span><span>Droite</span></div>';}
+  else if(m==='frag'){const lg=document.getElementById('leg');lg.style.display='';lg.innerHTML='<h4>Fragmentation (ENP)</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#00C853,#9C27B0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Faible</span><span>Moyen</span><span>Élevé</span></div>';}
+  updateColors();
+}
+function renderWinLeg(){
+  const counts={};
+  (CUR_DATA||[]).forEach(r=>{const bv=computeBV(r);if(bv.winner)counts[bv.winner.nuance]=(counts[bv.winner.nuance]||0)+1;});
+  const lg=document.getElementById('leg');lg.style.display='';
+  let h='<h4>Liste en tête</h4>';
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>h+=`<div class="li"><div class="ls" style="background:${ccolor(n)}"></div><span>${esc(cname(n))}</span><span class="lc">${c}</span></div>`);
+  lg.innerHTML=h;
+}
+
+// ── CORRELATIONS ──────────────────────────────────────────────────────────────
+function renderCorr(){
+  const nc=cands();
+  if(nc.length<3){document.getElementById('cc').innerHTML='<div style="color:var(--tm);font-size:11px;padding:8px 0">Corrélations : minimum 3 candidats requis.</div>';return;}
+  const keys=CUR_DATA||[];
+  function cr(lbl,r){const abs=Math.abs(r),col=r>0?'#1565C0':'#D32F2F';const left=r>=0?50:50-abs*50,w=abs*50;const sign=r>=0?'+':'';const str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';return`<div class="cr"><div class="cl">${esc(lbl)}</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${col}"></div></div><div class="cv" style="color:${col}">${sign}${r.toFixed(3)}</div><div class="cs">${str}</div></div>`;}
+  const nuances=nc.map(c=>c.nuance);
+  let pairs=[];
+  for(let i=0;i<nuances.length;i++)for(let j=i+1;j<nuances.length;j++){
+    const n1=nuances[i],n2=nuances[j];
+    const xs=keys.map(r=>r.exp>0?(parseInt(r[n1])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[n2])||0)/r.exp*100:0);
+    pairs.push({n1,n2,r:pearson(xs,ys)});
+  }
+  pairs.sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  const corrP=nuances.map(n=>({n,r:pearson(keys.map(r=>r.ins>0?r.vot/r.ins*100:0),keys.map(r=>r.exp>0?(parseInt(r[n])||0)/r.exp*100:0))})).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+  let html=`<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px;line-height:1.55">Corrélation de Pearson entre scores par bureau (34 BV, % exprimés).</div>`;
+  html+=`<div class="ph2" style="margin-bottom:8px">Paires de candidats</div>`;
+  pairs.slice(0,6).forEach(p=>html+=cr(`${cname(p.n1)} ↔ ${cname(p.n2)}`,p.r));
+  html+=`<div class="cst">Participation ↔ score</div>`;
+  corrP.forEach(item=>html+=cr(`Part. ↔ ${cname(item.n)}`,item.r));
+  html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;
+  nuances.forEach(n=>{const s=cname(n).split(' ').slice(-1)[0].substring(0,7);html+=`<th style="padding:3px 2px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(s)}</th>`;});
+  html+=`</tr>`;
+  nuances.forEach(n1=>{
+    html+=`<tr><td style="padding:3px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n1).split(' ').slice(-1)[0].substring(0,7))}</td>`;
+    nuances.forEach(n2=>{
+      if(n1===n2){html+=`<td style="padding:3px 2px;text-align:center;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-radius:2px">—</td>`;return;}
+      const xs=keys.map(r=>r.exp>0?(parseInt(r[n1])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[n2])||0)/r.exp*100:0);
+      const rv=pearson(xs,ys);const bg=rv>0?`rgba(21,101,192,${Math.min(rv*.7,.6)})`:`rgba(198,40,40,${Math.min(Math.abs(rv)*.7,.6)})`;
+      html+=`<td style="padding:3px 2px;text-align:center;background:${bg};color:#fff;border-radius:2px">${rv.toFixed(2)}</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</table></div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:10px">r de Pearson — 34 bureaux.</div>`;
+  document.getElementById('cc').innerHTML=html;
+}
+
+// ── TOOLTIP ──────────────────────────────────────────────────────────────────
+function buildTT(key){
+  const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return'';
+  const bv=computeBV(row);
+  let rows=bv.lists.slice(0,3).map(l=>`<div class="tt-r"><div class="tt-d" style="background:${l.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nom)}</span><span style="font-weight:700;color:${l.color};min-width:40px;text-align:right">${fP(l.pct)}</span></div>`).join('');
+  if(curCand){const v=parseInt(row[curCand])||0,p=row.exp>0?v/row.exp*100:0,c=ccolor(curCand);rows=`<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>`+rows;}
+  return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` — ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}`;
+}
+
+// ── ELECTION SELECTOR ─────────────────────────────────────────────────────────
+function buildDrop(){
+  const groups={};
+  ELECTIONS.forEach(e=>{
+    const yr=e.date?e.date.slice(-4):'';
+    const type=e.label.split(' ')[0];
+    const gk=type+yr;
+    if(!groups[gk])groups[gk]={title:type+' '+yr,items:[]};
+    groups[gk].items.push(e);
+  });
+  let h='';
+  Object.values(groups).forEach(g=>{
+    h+=`<div class="eg-title">${esc(g.title)}</div>`;
+    g.items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);
+  });
+  document.getElementById('ed').innerHTML=h;
+}
+function toggleDrop(){
+  const btn=document.getElementById('eb'),drop=document.getElementById('ed');
+  const o=drop.classList.toggle('open');btn.classList.toggle('open',o);
+  if(o){const close=()=>{drop.classList.remove('open');btn.classList.remove('open');document.removeEventListener('click',close);};setTimeout(()=>document.addEventListener('click',close),10);}
+}
+async function selElection(eid){
+  if(eid===CUR_EID)return;
+  document.getElementById('lt').textContent=`Chargement ${eid}…`;
+  document.getElementById('ld').classList.remove('h');
+  CUR_EID=eid;excl.clear();curCand=null;
+  document.getElementById('el').textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;
+  document.getElementById('ed').classList.remove('open');document.getElementById('eb').classList.remove('open');
+  buildDrop();
+  await loadCSV(eid);
+  closeBV();
+  document.getElementById('cp').style.display='none';
+  document.querySelectorAll('.pane').forEach(p=>{p.style.display='';p.classList.remove('active');});
+  document.getElementById('pane-r').classList.add('active');
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  renderGlobal();renderBVGrid();buildFC();setMode(mode);
+  document.getElementById('ld').classList.add('h');
+}
+
+// ── MAP INIT ─────────────────────────────────────────────────────────────────
+function initMap(){
+  map=new maplibregl.Map({
+    container:'map',
+    style:{version:8,sources:{
+      carto:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],tileSize:256,attribution:'© CARTO © OSM'},
+      lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}
+    },layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],
+    glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},
+    center:[2.3603,48.7934],zoom:13.8,minZoom:12,maxZoom:18
+  });
+  map.on('load',()=>{
+    map.addSource('bv',{type:'geojson',data:GEO,generateId:true});
+    map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});
+    map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
+    popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
+    map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');
+    map.on('mouseleave','bv-fill',()=>{map.getCanvas().style.cursor='';popup.remove();if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}});
+    map.on('mousemove','bv-fill',e=>{if(!e.features.length)return;const f=e.features[0],k=f.properties.id_bv;if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);});
+    map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
+    document.getElementById('ld').classList.add('h');
+    renderWinLeg();
+  });
+}
+
+// ── DATA LOADING ──────────────────────────────────────────────────────────────
+async function loadCSV(eid){
+  try{
+    const res=await fetch(`${DATA_BASE}${eid}.csv`);
+    if(!res.ok)throw new Error('CSV not found');
+    const txt=await res.text();
+    CUR_DATA=parseCSV(txt);
+  }catch(e){
+    console.warn('CSV load failed:',e);CUR_DATA=[];
+  }
+}
+
+async function init(){
+  document.getElementById('lt').textContent='Chargement des données…';
+  try{
+    // Load GEO
+    const gr=await fetch('geo.json');
+    GEO=await gr.json();
+  }catch(e){
+    // Fallback: embed minimal geo inline if file not found
+    console.warn('geo.json not found, will embed inline');
+  }
+  // Load elections catalogue
+  try{
+    const er=await fetch(`${DATA_BASE}elections.json`);
+    ELECTIONS=await er.json();
+  }catch(e){
+    console.warn('elections.json not found');ELECTIONS=[];
+  }
+  // Default: first election
+  if(ELECTIONS.length>0){
+    CUR_EID=ELECTIONS[0].id;
+    document.getElementById('el').textContent=ELECTIONS[0].label;
+  }
+  buildDrop();
+  // Load first CSV
+  if(CUR_EID)await loadCSV(CUR_EID);
+  renderGlobal();renderBVGrid();buildFC();
+  initMap();
+}
+
+init();
+</script>
+
+</body>
+</html>
