@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -258,7 +257,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 <div id="ft"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 // When hosted on GitHub Pages, set DATA_BASE to '' (same folder).
@@ -312,11 +310,19 @@ function computeBV(row){
   lists.forEach(l=>l.pct=exp>0?l.voix/exp*100:0);
   lists.sort((a,b)=>b.voix-a.voix);
   const winner=lists[0]||null;
-  let gr=0,g=0,cen=0,dr=0,au=0;
-  lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else au+=l.voix;});
+  let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;
+  lists.forEach(l=>{
+    if(l.bloc==='gauche_rad')     gr+=l.voix;
+    else if(l.bloc==='gauche')    g+=l.voix;
+    else if(l.bloc==='centre')    cen+=l.voix;
+    else if(l.bloc==='droite')    dr+=l.voix;
+    else if(l.bloc==='ex_gauche') exg+=l.voix;
+    else if(l.bloc==='ex_droite') exd+=l.voix;
+    else au+=l.voix;
+  });
   const part=row.ins>0?row.vot/row.ins*100:0;
   let sq=0;if(exp>0)lists.forEach(l=>{const p=l.voix/exp;sq+=p*p;});
-  return{key:row.bv,lieu:row.lieu||lieauOf(row.bv),inscrits:row.ins,votants:row.vot,exprimes:exp,blancs:row.bl,nuls:row.nu,participation:part,lists,winner,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixAu:au,enp:sq>0?1/sq:1};
+  return{key:row.bv,lieu:row.lieu||lieauOf(row.bv),inscrits:row.ins,votants:row.vot,exprimes:exp,blancs:row.bl,nuls:row.nu,participation:part,lists,winner,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au,enp:sq>0?1/sq:1};
 }
 
 function agg(){
@@ -330,9 +336,17 @@ function agg(){
   });
   const lists=Object.entries(vm).map(([nuance,voix])=>({nuance,voix,nom:cname(nuance),color:ccolor(nuance),pct:exp>0?voix/exp*100:0,bloc:(cand(nuance)||{bloc:'autre'}).bloc})).sort((a,b)=>b.voix-a.voix);
   const part=ins>0?vot/ins*100:0;
-  let gr=0,g=0,cen=0,dr=0,au=0;
-  lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else au+=l.voix;});
-  return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixAu:au};
+  let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;
+  lists.forEach(l=>{
+    if(l.bloc==='gauche_rad')     gr+=l.voix;
+    else if(l.bloc==='gauche')    g+=l.voix;
+    else if(l.bloc==='centre')    cen+=l.voix;
+    else if(l.bloc==='droite')    dr+=l.voix;
+    else if(l.bloc==='ex_gauche') exg+=l.voix;
+    else if(l.bloc==='ex_droite') exd+=l.voix;
+    else au+=l.voix;
+  });
+  return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au};
 }
 
 // ── RENDER HELPERS ───────────────────────────────────────────────────────────
@@ -342,7 +356,15 @@ function rKPIs(el,d){
 }
 function rBal(el,d){
   const T=d.exprimes||1;
-  const segs=[[d.voixGR/T*100,'#C62828','G. rad.'],[d.voixG/T*100,'#EC407A','Gauche'],[d.voixCen/T*100,'#FF8F00','Centre'],[d.voixDr/T*100,'#1565C0','Droite'],[d.voixAu/T*100,'#78909C','Autres']].filter(s=>s[0]>0.5);
+  const segs=[
+    [d.voixEXG/T*100,'#7B1FA2','Ext. gauche'],
+    [d.voixGR/T*100, '#C62828','G. rad.'],
+    [d.voixG/T*100,  '#EC407A','Gauche'],
+    [d.voixCen/T*100,'#FF8F00','Centre'],
+    [d.voixDr/T*100, '#1565C0','Droite'],
+    [d.voixEXD/T*100,'#1A237E','Ext. droite'],
+    [d.voixAu/T*100, '#78909C','Autres'],
+  ].filter(s=>s[0]>0.5);
   el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Équilibre politique</div><div class="bb">${segs.map(s=>`<div style="width:${s[0]}%;background:${s[1]}" title="${s[2]} ${fP(s[0])}"></div>`).join('')}</div><div class="bbl">${segs.map(s=>`<span style="color:${s[1]}">${s[2]} ${fP(s[0])}</span>`).join('')}</div>`;
 }
 function rBars(el,lists,exp,anim=true,click=false){
@@ -631,16 +653,9 @@ async function loadCSV(eid){
   }
 }
 
-async function init(){
-  document.getElementById('lt').textContent='Chargement des données…';
-  try{
-    // Load GEO
-    const gr=await fetch('geo.json');
-    GEO=await gr.json();
-  }catch(e){
-    // Fallback: embed minimal geo inline if file not found
-    console.warn('geo.json not found, will embed inline');
-  }
+// ── GEO INLINE ───────────────────────────────────────────────────────────────
+// Embarqué directement pour éviter un fetch supplémentaire
+const GEO_INLINE={"type":"FeatureCollection","features":[{"type":"Feature","properties":{"id_bv":"1","lieu":"Conseil Municipal"},"geometry":{"type":"Polygon","coordinates":[[[2.36647828,48.79113289],[2.36662914,48.7911349],[2.36665352,48.7907514],[2.36667237,48.790763],[2.36676101,48.78965571],[2.36708602,48.78967761],[2.3669309,48.79086989],[2.36676101,48.79089666],[2.36679056,48.79106455],[2.36708972,48.79109618],[2.36733717,48.79113998],[2.36772867,48.79117648],[2.3675994,48.79226167],[2.36673146,48.79244172],[2.36666498,48.79254878],[2.36658119,48.79254051],[2.36621972,48.79339476],[2.36586399,48.79338342],[2.36570907,48.79368202],[2.36507794,48.79361399],[2.36433778,48.79350059],[2.36417139,48.79370848],[2.36360337,48.79366312],[2.36335091,48.79362533],[2.36367796,48.79305457],[2.36352304,48.79265769],[2.36277715,48.7923364],[2.36207716,48.79211717],[2.3622206,48.79198109],[2.36310993,48.79216253],[2.36406811,48.79237042],[2.36455007,48.79246492],[2.36531892,48.79251784],[2.36598448,48.79251784],[2.36631726,48.79243846],[2.36616235,48.79141032],[2.36645497,48.79141032],[2.36647828,48.79113289]]]}},{"type":"Feature","properties":{"id_bv":"2","lieu":"Médiathèque Triolet"},"geometry":{"type":"Polygon","coordinates":[[[2.35529347,48.79412165],[2.35432307,48.79455656],[2.35443443,48.7951015],[2.35444238,48.79509626],[2.35712291,48.79543161],[2.35783083,48.79456704],[2.36101247,48.79475567],[2.36126813,48.79463203],[2.36204973,48.79469054],[2.36199644,48.79439799],[2.36199644,48.79400012],[2.36100167,48.793415],[2.36096614,48.79316925],[2.3620142,48.79251392],[2.36207716,48.79211717],[2.3622206,48.79198109],[2.36224513,48.79139046],[2.36158787,48.79084042],[2.36176551,48.79026698],[2.36121484,48.79026698],[2.36036218,48.79167133],[2.35860356,48.79120321],[2.35737787,48.79265435],[2.35407381,48.79305223],[2.35407381,48.79325117],[2.35464919,48.79326754],[2.35436284,48.79361862],[2.35529347,48.79412165]]]}},{"type":"Feature","properties":{"id_bv":"3","lieu":"Jean Vilar"},"geometry":{"type":"Polygon","coordinates":[[[2.3622206,48.79198109],[2.36224513,48.79139046],[2.36328388,48.79138456],[2.36366031,48.79062057],[2.36418853,48.79060857],[2.3642796,48.79037657],[2.36512961,48.79040857],[2.36522722,48.78864506],[2.36553597,48.78864767],[2.36631559,48.78869177],[2.36656158,48.78864366],[2.36676913,48.78853477],[2.36683743,48.78860609],[2.36755164,48.78863892],[2.36760146,48.78879212],[2.36739385,48.78883042],[2.36744367,48.78941586],[2.36796687,48.78948152],[2.36818279,48.7897715],[2.36790874,48.78978244],[2.36795026,48.7906086],[2.36755872,48.790749],[2.36696435,48.79059941],[2.36645497,48.79141032],[2.36616235,48.79141032],[2.36631726,48.79243846],[2.36598448,48.79251784],[2.36531892,48.79251784],[2.36455007,48.79246492],[2.36310993,48.79216253],[2.3622206,48.79198109]]]}},{"type":"Feature","properties":{"id_bv":"4","lieu":"Jean Vilar"},"geometry":{"type":"Polygon","coordinates":[[[2.35860356,48.79120321],[2.35876517,48.78849021],[2.36170757,48.78849021],[2.36190819,48.78846084],[2.36676913,48.78853477],[2.36656158,48.78864366],[2.36631559,48.78869177],[2.36553597,48.78864767],[2.36522722,48.78864506],[2.36512961,48.79040857],[2.3642796,48.79037657],[2.36418853,48.79060857],[2.36366031,48.79062057],[2.36328388,48.79138456],[2.36224513,48.79139046],[2.36158787,48.79084042],[2.36176551,48.79026698],[2.36121484,48.79026698],[2.36036218,48.79167133],[2.35860356,48.79120321]]]}},{"type":"Feature","properties":{"id_bv":"5","lieu":"George Sand"},"geometry":{"type":"Polygon","coordinates":[[[2.36621972,48.79339476],[2.36658119,48.79254051],[2.36706732,48.79274411],[2.36825554,48.79290066],[2.3686012,48.79211788],[2.36951533,48.79105896],[2.36954119,48.79160412],[2.36907649,48.79216057],[2.36886045,48.7928295],[2.36932187,48.7929979],[2.36910158,48.79443204],[2.36853268,48.79581186],[2.36794245,48.79732276],[2.36760693,48.79814112],[2.36712631,48.79874443],[2.36615568,48.79940452],[2.3671172,48.79613691],[2.36761321,48.79596097],[2.36759414,48.79569706],[2.36658303,48.79515667],[2.36656395,48.79499329],[2.36610698,48.794901],[2.36621972,48.79339476]]]}},{"type":"Feature","properties":{"id_bv":"6","lieu":"George Sand"},"geometry":{"type":"Polygon","coordinates":[[[2.36610698,48.794901],[2.36656395,48.79499329],[2.36658303,48.79515667],[2.36759414,48.79569706],[2.36761321,48.79596097],[2.3671172,48.79613691],[2.36615568,48.79940452],[2.36569353,48.79971807],[2.36541242,48.79998686],[2.36459945,48.7987067],[2.36210238,48.79800002],[2.36101247,48.79475567],[2.36126813,48.79463203],[2.36610698,48.794901]]]}},{"type":"Feature","properties":{"id_bv":"7","lieu":"Henri Wallon"},"geometry":{"type":"Polygon","coordinates":[[[2.35825129,48.80318535],[2.35672872,48.8033938],[2.35639096,48.80304999],[2.3554698,48.803141],[2.35408805,48.80236237],[2.3529673,48.80313089],[2.35123243,48.80244326],[2.35170837,48.8017354],[2.35253742,48.80076461],[2.35289053,48.80043089],[2.35353535,48.80056236],[2.35487104,48.80100731],[2.35510133,48.8007545],[2.35548515,48.80095675],[2.35563103,48.80121071],[2.35626288,48.80203938],[2.35665764,48.80234754],[2.35733019,48.80272311],[2.35825129,48.80318535]]]}},{"type":"Feature","properties":{"id_bv":"8","lieu":"Joliot Curie"},"geometry":{"type":"Polygon","coordinates":[[[2.3509542,48.79659813],[2.35291095,48.79601682],[2.35329462,48.79556188],[2.35406198,48.79539759],[2.35443443,48.7951015],[2.35712291,48.79543161],[2.35783083,48.79456704],[2.36101247,48.79475567],[2.36210238,48.79800002],[2.35979849,48.79935178],[2.35926285,48.80116421],[2.35945362,48.80143002],[2.35851442,48.80120287],[2.35789806,48.80117387],[2.35725236,48.80099022],[2.3566418,48.80076033],[2.35786037,48.79853156],[2.35716975,48.79831673],[2.35776445,48.79738162],[2.35803303,48.7972047],[2.35801384,48.79702778],[2.35642158,48.79674977],[2.35528974,48.79808928],[2.35502117,48.79789973],[2.35463749,48.79798818],[2.3509542,48.79659813]]]}},{"type":"Feature","properties":{"id_bv":"9","lieu":"Joliot Curie"},"geometry":{"type":"Polygon","coordinates":[[[2.34473249,48.79275812],[2.34497384,48.79478705],[2.34376059,48.79771751],[2.34525055,48.79686223],[2.34605938,48.79714265],[2.34522926,48.79778761],[2.34699593,48.79826432],[2.34771962,48.79864288],[2.3474642,48.79881113],[2.34774091,48.79903546],[2.34605938,48.7996103],[2.3476132,48.80130674],[2.34847948,48.80103353],[2.34957296,48.79980783],[2.35043623,48.79973201],[2.35158726,48.7993782],[2.35212441,48.79939083],[2.35377422,48.79845574],[2.35477178,48.7
   // Load elections catalogue
   try{
     const er=await fetch(`${DATA_BASE}elections.json`);
@@ -662,6 +677,5 @@ async function init(){
 
 init();
 </script>
-
 </body>
 </html>
