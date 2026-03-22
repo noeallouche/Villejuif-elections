@@ -83,32 +83,5 @@
       {"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
       {"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"}
     ]
-  },
-  {
-    "id": "LEG22T1",
-    "label": "Législatives 2022 – Tour 1",
-    "date": "12/06/2022",
-    "participation": 44.28,
-    "inscrits": 30953,
-    "candidates": [
-      {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
-      {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
-      {"nuance":"ENS2","nom":"Marie Gabelica","label":"Ensemble","color":"#FFB300","bloc":"centre"},
-      {"nuance":"DVG","nom":"M. Bounegta","label":"DVG","color":"#E53935","bloc":"gauche"},
-      {"nuance":"DVG2","nom":"Mme Rocheteau","label":"DVG","color":"#E57373","bloc":"gauche"},
-      {"nuance":"DVG3","nom":"Mme Milamon","label":"DVG","color":"#EC407A","bloc":"gauche"},
-      {"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
-    ]
-  },
-  {
-    "id": "LEG22T2",
-    "label": "Législatives 2022 – Tour 2",
-    "date": "19/06/2022",
-    "participation": 0,
-    "inscrits": 30953,
-    "candidates": [
-      {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
-      {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"}
-    ]
   }
 ]
