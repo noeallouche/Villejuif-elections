@@ -43,14 +43,14 @@
     "participation": 0,
     "inscrits": 0,
     "candidates": [
-      {"nuance":"MARÉCHAL","nom":"Mme Marion MARÉCHAL","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"AUBRY","nom":"Mme Manon AUBRY","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"M.","nom":"M. Jordan BARDELLA","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"TOUSSAIN","nom":"Mme Marie TOUSSAINT","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"HAYER","nom":"Mme Valérie HAYER","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"M.2","nom":"M. François-Xavier BELLAMY","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"M.3","nom":"M. Raphaël GLUCKSMANN","label":"","color":"#78909C","bloc":"autre"},
-      {"nuance":"M.4","nom":"M. Léon DEFFONTAINES","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"R!","nom":"Mme Marion MARÉCHAL","label":"","color":"#78909C","bloc":"ex_droite"},
+      {"nuance":"LFI","nom":"Mme Manon AUBRY","label":"","color":"#78909C","bloc":"gauche_rad"},
+      {"nuance":"RN","nom":"M. Jordan BARDELLA","label":"","color":"#78909C","bloc":"ex_droite"},
+      {"nuance":"EELV","nom":"Mme Marie TOUSSAINT","label":"","color":"#78909C","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Mme Valérie HAYER","label":"","color":"#78909C","bloc":"centre"},
+      {"nuance":"LR","nom":"M. François-Xavier BELLAMY","label":"","color":"#78909C","bloc":"droite"},
+      {"nuance":"PS","nom":"M. Raphaël GLUCKSMANN","label":"","color":"#78909C","bloc":"gauche"},
+      {"nuance":"PCF","nom":"M. Léon DEFFONTAINES","label":"","color":"#78909C","bloc":"gauche"},
       {"nuance":"AUTRES","nom":"Autres","label":"Autres","color":"#607D8B","bloc":"autre"}
     ]
   }
