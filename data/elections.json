@@ -34,6 +34,28 @@
 {"nuance":"DIV","nom":"Charles Mariaud","label":"DIV","color":"#78909C","bloc":"autre"}
 ]
 },
+
+
+  {
+    "id": "014-0",
+    "label": "Européennes 2024(09/06/2024)",
+    "date": "??/??/????",
+    "participation": 0,
+    "inscrits": 0,
+    "candidates": [
+      {"nuance":"MARÉCHAL","nom":"Mme Marion MARÉCHAL","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"AUBRY","nom":"Mme Manon AUBRY","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"M.","nom":"M. Jordan BARDELLA","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"TOUSSAIN","nom":"Mme Marie TOUSSAINT","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"HAYER","nom":"Mme Valérie HAYER","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"M.2","nom":"M. François-Xavier BELLAMY","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"M.3","nom":"M. Raphaël GLUCKSMANN","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"M.4","nom":"M. Léon DEFFONTAINES","label":"","color":"#78909C","bloc":"autre"},
+      {"nuance":"AUTRES","nom":"Autres","label":"Autres","color":"#607D8B","bloc":"autre"}
+    ]
+  }
+
+
 {
 "id": "PRE22T1",
 "label": "Présidentielle 2022 – Tour 1",
@@ -90,22 +112,5 @@
 {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"}
 ]
 },
-{
-"id": "EUR24",
-"label": "Européennes 2024",
-"date": "09/06/2024",
-"participation": 46.60,
-"inscrits": 31947,
-"candidates": [
-{"nuance":"LFI","nom":"Manon Aubry","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
-{"nuance":"PS","nom":"Raphaël Glucksmann","label":"PS-Place Publique","color":"#EC407A","bloc":"gauche"},
-{"nuance":"ENS","nom":"Valérie Hayer","label":"Renaissance","color":"#FF8F00","bloc":"centre"},
-{"nuance":"RN","nom":"Jordan Bardella","label":"RN","color":"#1565C0","bloc":"ex_droite"},
-{"nuance":"EELV","nom":"Marie Toussaint","label":"EELV","color":"#2E7D32","bloc":"gauche"},
-{"nuance":"PCF","nom":"Léon Deffontaines","label":"PCF","color":"#C2185B","bloc":"gauche"},
-{"nuance":"LR","nom":"François-Xavier Bellamy","label":"LR","color":"#0D47A1","bloc":"droite"},
-{"nuance":"REC","nom":"Marion Maréchal","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
-{"nuance":"AUTRES","nom":"Autres listes","label":"Autres","color":"#607D8B","bloc":"autre"}
-]
-}
+
 ]
