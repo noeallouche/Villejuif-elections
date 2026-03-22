@@ -6,15 +6,15 @@
     "participation": 48.04,
     "inscrits": 32689,
     "candidates": [
-      { "nuance": "PCF", "nom": "Pierre Garzon", "label": "PCF-EELV", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "LFI", "nom": "Djamel Arrouche", "label": "LFI", "color": "#B71C1C", "bloc": "gauche_rad" },
-      { "nuance": "PS", "nom": "Sylvie Mantion", "label": "PS", "color": "#EC407A", "bloc": "gauche" },
-      { "nuance": "DVG", "nom": "Rabah Bahloul", "label": "DVG", "color": "#E53935", "bloc": "gauche" },
-      { "nuance": "VD!", "nom": "Sandra Da Silva", "label": "DVG", "color": "#E57373", "bloc": "gauche" },
-      { "nuance": "LO", "nom": "Agathe Martin", "label": "LO", "color": "#D32F2F", "bloc": "ex_gauche" },
-      { "nuance": "MOD", "nom": "Christel Esclangon", "label": "MoDem", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "100%V", "nom": "Ilyas Touzani", "label": "DIV", "color": "#78909C", "bloc": "autre" },
-      { "nuance": "LR", "nom": "Franck Conquet", "label": "LR", "color": "#1565C0", "bloc": "droite" }
+      {"nuance":"PCF","nom":"Pierre Garzon","label":"PCF-EELV","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"LFI","nom":"Djamel Arrouche","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
+      {"nuance":"PS","nom":"Sylvie Mantion","label":"PS","color":"#EC407A","bloc":"gauche"},
+      {"nuance":"DVG","nom":"Rabah Bahloul","label":"DVG","color":"#E53935","bloc":"gauche"},
+      {"nuance":"VD","nom":"Sandra Da Silva","label":"DVG","color":"#E57373","bloc":"gauche"},
+      {"nuance":"LO","nom":"Agathe Martin","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"MOD","nom":"Christel Esclangon","label":"MoDem","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"DIV","nom":"Ilyas Touzani","label":"DIV","color":"#78909C","bloc":"autre"},
+      {"nuance":"LR","nom":"Franck Conquet","label":"LR","color":"#1565C0","bloc":"droite"}
     ]
   },
   {
@@ -24,14 +24,14 @@
     "participation": 62.61,
     "inscrits": 31561,
     "candidates": [
-      { "nuance": "NFP", "nom": "Sophie Taillé-Polian", "label": "Nv. Front Populaire", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "ENS", "nom": "Nathalie Picot", "label": "Ensemble", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "RN", "nom": "Sylvie Bouchot", "label": "RN", "color": "#1565C0", "bloc": "ex_droite" },
-      { "nuance": "LR", "nom": "Cédric Rivet-Sow", "label": "LR", "color": "#0D47A1", "bloc": "droite" },
-      { "nuance": "R!", "nom": "Lydie Cousty", "label": "Reconquête", "color": "#7B1FA2", "bloc": "ex_droite" },
-      { "nuance": "NPA", "nom": "Sébastien Sugranes", "label": "NPA", "color": "#D32F2F", "bloc": "ex_gauche" },
-      { "nuance": "LO", "nom": "Christine Samson", "label": "LO", "color": "#B71C1C", "bloc": "ex_gauche" },
-      { "nuance": "DIV", "nom": "Charles Mariaud", "label": "DIV", "color": "#78909C", "bloc": "autre" }
+      {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"Nv. Front Populaire","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Nathalie Picot","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"RN","nom":"Sylvie Bouchot","label":"RN","color":"#1565C0","bloc":"ex_droite"},
+      {"nuance":"LR","nom":"Cédric Rivet-Sow","label":"LR","color":"#0D47A1","bloc":"droite"},
+      {"nuance":"REC","nom":"Lydie Cousty","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"NPA","nom":"Sébastien Sugranes","label":"NPA","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"LO","nom":"Christine Samson","label":"LO","color":"#B71C1C","bloc":"ex_gauche"},
+      {"nuance":"DIV","nom":"Charles Mariaud","label":"DIV","color":"#78909C","bloc":"autre"}
     ]
   },
   {
@@ -41,15 +41,15 @@
     "participation": 45.76,
     "inscrits": 31947,
     "candidates": [
-      { "nuance": "R!", "nom": "Marion Maréchal", "label": "Reconquête", "color": "#7B1FA2", "bloc": "ex_droite" },
-      { "nuance": "LFI", "nom": "Manon Aubry", "label": "LFI", "color": "#B71C1C", "bloc": "gauche_rad" },
-      { "nuance": "RN", "nom": "Jordan Bardella", "label": "RN", "color": "#1565C0", "bloc": "ex_droite" },
-      { "nuance": "EELV", "nom": "Marie Toussaint", "label": "EELV", "color": "#4CAF50", "bloc": "gauche" },
-      { "nuance": "ENS", "nom": "Valérie Hayer", "label": "Ensemble", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "LR", "nom": "François-Xavier Bellamy", "label": "LR", "color": "#1565C0", "bloc": "droite" },
-      { "nuance": "PS", "nom": "Raphaël Glucksmann", "label": "PS-PP", "color": "#EC407A", "bloc": "gauche" },
-      { "nuance": "PCF", "nom": "Léon Deffontaines", "label": "PCF", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "AUTRES", "nom": "Autres", "label": "Autres", "color": "#607D8B", "bloc": "autre" }
+      {"nuance":"REC","nom":"Marion Maréchal","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"LFI","nom":"Manon Aubry","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
+      {"nuance":"RN","nom":"Jordan Bardella","label":"RN","color":"#1565C0","bloc":"ex_droite"},
+      {"nuance":"EELV","nom":"Marie Toussaint","label":"EELV","color":"#4CAF50","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Valérie Hayer","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"LR","nom":"François-Xavier Bellamy","label":"LR","color":"#0D47A1","bloc":"droite"},
+      {"nuance":"PS","nom":"Raphaël Glucksmann","label":"PS-PP","color":"#EC407A","bloc":"gauche"},
+      {"nuance":"PCF","nom":"Léon Deffontaines","label":"PCF","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"AUTRES","nom":"Autres","label":"Autres","color":"#607D8B","bloc":"autre"}
     ]
   },
   {
@@ -59,18 +59,18 @@
     "participation": 71.87,
     "inscrits": 30738,
     "candidates": [
-      { "nuance": "LO", "nom": "Nathalie Arthaud", "label": "LO", "color": "#D32F2F", "bloc": "ex_gauche" },
-      { "nuance": "PCF", "nom": "Fabien Roussel", "label": "PCF", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "ENS", "nom": "Emmanuel Macron", "label": "LREM", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "RES", "nom": "Jean Lassalle", "label": "RES", "color": "#78909C", "bloc": "centre" },
-      { "nuance": "RN", "nom": "Marine Le Pen", "label": "RN", "color": "#1565C0", "bloc": "ex_droite" },
-      { "nuance": "R!", "nom": "Éric Zemmour", "label": "Reconquête", "color": "#7B1FA2", "bloc": "ex_droite" },
-      { "nuance": "LFI", "nom": "Jean-Luc Mélenchon", "label": "LFI", "color": "#B71C1C", "bloc": "gauche_rad" },
-      { "nuance": "PS", "nom": "Anne Hidalgo", "label": "PS", "color": "#EC407A", "bloc": "gauche" },
-      { "nuance": "EELV", "nom": "Yannick Jadot", "label": "EELV", "color": "#4CAF50", "bloc": "gauche" },
-      { "nuance": "LR", "nom": "Valérie Pécresse", "label": "LR", "color": "#1565C0", "bloc": "droite" },
-      { "nuance": "NPA", "nom": "Philippe Poutou", "label": "NPA", "color": "#D32F2F", "bloc": "ex_gauche" },
-      { "nuance": "DLF", "nom": "Nicolas Dupont-Aignan", "label": "DLF", "color": "#1565C0", "bloc": "ex_droite" }
+      {"nuance":"LO","nom":"Nathalie Arthaud","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"PCF","nom":"Fabien Roussel","label":"PCF","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"RES","nom":"Jean Lassalle","label":"RES","color":"#78909C","bloc":"centre"},
+      {"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"},
+      {"nuance":"REC","nom":"Éric Zemmour","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"LFI","nom":"Jean-Luc Mélenchon","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
+      {"nuance":"PS","nom":"Anne Hidalgo","label":"PS","color":"#EC407A","bloc":"gauche"},
+      {"nuance":"EELV","nom":"Yannick Jadot","label":"EELV","color":"#4CAF50","bloc":"gauche"},
+      {"nuance":"LR","nom":"Valérie Pécresse","label":"LR","color":"#0D47A1","bloc":"droite"},
+      {"nuance":"NPA","nom":"Philippe Poutou","label":"NPA","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"DLF","nom":"Nicolas Dupont-Aignan","label":"DLF","color":"#1A237E","bloc":"ex_droite"}
     ]
   },
   {
@@ -80,8 +80,8 @@
     "participation": 64.70,
     "inscrits": 30755,
     "candidates": [
-      { "nuance": "ENS", "nom": "Emmanuel Macron", "label": "LREM", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "RN", "nom": "Marine Le Pen", "label": "RN", "color": "#1565C0", "bloc": "ex_droite" }
+      {"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"}
     ]
   },
   {
@@ -91,13 +91,13 @@
     "participation": 44.28,
     "inscrits": 30953,
     "candidates": [
-      { "nuance": "NFP", "nom": "Sophie Taillé-Polian", "label": "NUPES", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "ENS", "nom": "Éric Calvez", "label": "Ensemble", "color": "#FF8F00", "bloc": "centre" },
-      { "nuance": "ENS", "nom": "Marie Gabelica", "label": "Ensemble", "color": "#FFB300", "bloc": "centre" },
-      { "nuance": "DVG", "nom": "M. Bounegta", "label": "DVG", "color": "#E53935", "bloc": "gauche" },
-      { "nuance": "DVG", "nom": "Mme Rocheteau", "label": "DVG", "color": "#E57373", "bloc": "gauche" },
-      { "nuance": "DVG", "nom": "Mme Milamon", "label": "DVG", "color": "#EC407A", "bloc": "gauche" },
-      { "nuance": "AUTRES", "nom": "Autres candidats", "label": "Autres", "color": "#607D8B", "bloc": "autre" }
+      {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"ENS2","nom":"Marie Gabelica","label":"Ensemble","color":"#FFB300","bloc":"centre"},
+      {"nuance":"DVG","nom":"M. Bounegta","label":"DVG","color":"#E53935","bloc":"gauche"},
+      {"nuance":"DVG2","nom":"Mme Rocheteau","label":"DVG","color":"#E57373","bloc":"gauche"},
+      {"nuance":"DVG3","nom":"Mme Milamon","label":"DVG","color":"#EC407A","bloc":"gauche"},
+      {"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
     ]
   },
   {
@@ -107,90 +107,8 @@
     "participation": 0,
     "inscrits": 30953,
     "candidates": [
-      { "nuance": "NFP", "nom": "Sophie Taillé-Polian", "label": "NUPES", "color": "#C2185B", "bloc": "gauche" },
-      { "nuance": "ENS", "nom": "Éric Calvez", "label": "Ensemble", "color": "#FF8F00", "bloc": "centre" }
+      {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"}
     ]
   }
-]
-
-  {
-    "id": "EUR24",
-    "label": "Européennes 2024(09/06/2024)",
-    "date": "09/06/2024",
-    "participation": 45.76,
-    "inscrits": 31947,
-    "candidates": [
-      {"nuance":"R!","nom":"Mme Marion MARÉCHAL","label":"","color":"#78909C","bloc":"ex_droite"},
-      {"nuance":"LFI","nom":"Mme Manon AUBRY","label":"","color":"#78909C","bloc":"gauche_rad"},
-      {"nuance":"RN","nom":"M. Jordan BARDELLA","label":"","color":"#78909C","bloc":"ex_droite"},
-      {"nuance":"EELV","nom":"Mme Marie TOUSSAINT","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"ENS","nom":"Mme Valérie HAYER","label":"","color":"#78909C","bloc":"centre"},
-      {"nuance":"LR","nom":"M. François-Xavier BELLAMY","label":"","color":"#78909C","bloc":"droite"},
-      {"nuance":"PS","nom":"M. Raphaël GLUCKSMANN","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"PCF","nom":"M. Léon DEFFONTAINES","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"AUTRES","nom":"Autres","label":"Autres","color":"#607D8B","bloc":"autre"}
-    ]
-  }
-
-
-{
-"id": "PRE22T1",
-"label": "Présidentielle 2022 – Tour 1",
-"date": "10/04/2022",
-"participation": 71.87,
-"inscrits": 30738,
-"candidates": [
-      {"nuance":"LO","nom":"Nathalie ARTHAUD","label":"","color":"#78909C","bloc":"ex_gauche"},
-      {"nuance":"PCF","nom":"Fabien ROUSSEL","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"ENS","nom":"Emmanuel MACRON","label":"","color":"#78909C","bloc":"centre"},
-      {"nuance":"RES","nom":"Jean LASSALLE","label":"","color":"#78909C","bloc":"centre"},
-      {"nuance":"RN","nom":"Marine LE PEN","label":"","color":"#78909C","bloc":"ex_droite"},
-      {"nuance":"R!","nom":"Éric ZEMMOUR","label":"","color":"#78909C","bloc":"ex_droite"},
-      {"nuance":"LFI","nom":"Jean-Luc MÉLENCHON","label":"","color":"#78909C","bloc":"gauche_rad"},
-      {"nuance":"PS","nom":"Anne HIDALGO","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"EELV","nom":"Yannick JADOT","label":"","color":"#78909C","bloc":"gauche"},
-      {"nuance":"LR","nom":"Valérie PÉCRESSE","label":"","color":"#78909C","bloc":"droite"},
-      {"nuance":"NPA","nom":"Philippe POUTOU","label":"","color":"#78909C","bloc":"ex_gauche"},
-      {"nuance":"DLF","nom":"Nicolas DUPONT-AIGNAN","label":"","color":"#78909C","bloc":"ex_droite"},
-]
-},
-{
-"id": "PRE22T2",
-"label": "Présidentielle 2022 – Tour 2",
-"date": "24/04/2022",
-"participation": 64.70,
-"inscrits": 30755,
-"candidates": [
-{"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
-{"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"}
-]
-},
-{
-"id": "LEG22T1",
-"label": "Législatives 2022 – Tour 1",
-"date": "12/06/2022",
-"participation": 44.28,
-"inscrits": 30953,
-"candidates": [
-{"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
-{"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
-{"nuance":"ENS","nom":"Marie Gabelica","label":"Ensemble","color":"#FFB300","bloc":"centre"},
-{"nuance":"DVG","nom":"M. Bounegta","label":"DVG","color":"#E53935","bloc":"gauche"},
-{"nuance":"DVG","nom":"Mme Rocheteau","label":"DVG","color":"#E57373","bloc":"gauche"},
-{"nuance":"DVG","nom":"Mme Milamon","label":"DVG","color":"#EC407A","bloc":"gauche"},
-{"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
-]
-},
-{
-"id": "LEG22T2",
-"label": "Législatives 2022 – Tour 2",
-"date": "19/06/2022",
-"participation": 0,
-"inscrits": 30953,
-"candidates": [
-{"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
-{"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"}
-]
-},
-
 ]
