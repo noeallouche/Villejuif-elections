@@ -63,15 +63,18 @@
 "participation": 71.87,
 "inscrits": 30738,
 "candidates": [
-{"nuance":"LFI","nom":"Jean-Luc Mélenchon","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
-{"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
-{"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"},
-{"nuance":"R!","nom":"Éric Zemmour","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
-{"nuance":"EELV","nom":"Yannick Jadot","label":"EELV","color":"#2E7D32","bloc":"gauche"},
-{"nuance":"LR","nom":"Valérie Pécresse","label":"LR","color":"#0D47A1","bloc":"droite"},
-{"nuance":"PCF","nom":"Fabien Roussel","label":"PCF","color":"#C2185B","bloc":"gauche"},
-{"nuance":"PS","nom":"Anne Hidalgo","label":"PS","color":"#EC407A","bloc":"gauche"},
-{"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
+      {"nuance":"LO","nom":"Nathalie ARTHAUD","label":"","color":"#78909C","bloc":"ex_gauche"},
+      {"nuance":"PCF","nom":"Fabien ROUSSEL","label":"","color":"#78909C","bloc":"gauche"},
+      {"nuance":"ENS","nom":"Emmanuel MACRON","label":"","color":"#78909C","bloc":"centre"},
+      {"nuance":"RES","nom":"Jean LASSALLE","label":"","color":"#78909C","bloc":"centre"},
+      {"nuance":"RN","nom":"Marine LE PEN","label":"","color":"#78909C","bloc":"ex_droite"},
+      {"nuance":"R!","nom":"Éric ZEMMOUR","label":"","color":"#78909C","bloc":"ex_droite"},
+      {"nuance":"LFI","nom":"Jean-Luc MÉLENCHON","label":"","color":"#78909C","bloc":"gauche_rad"},
+      {"nuance":"PS","nom":"Anne HIDALGO","label":"","color":"#78909C","bloc":"gauche"},
+      {"nuance":"EELV","nom":"Yannick JADOT","label":"","color":"#78909C","bloc":"gauche"},
+      {"nuance":"LR","nom":"Valérie PÉCRESSE","label":"","color":"#78909C","bloc":"droite"},
+      {"nuance":"NPA","nom":"Philippe POUTOU","label":"","color":"#78909C","bloc":"ex_gauche"},
+      {"nuance":"DLF","nom":"Nicolas DUPONT-AIGNAN","label":"","color":"#78909C","bloc":"ex_droite"},
 ]
 },
 {
