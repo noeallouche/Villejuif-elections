@@ -28,7 +28,7 @@
       {"nuance":"ENS","nom":"Nathalie Picot","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
       {"nuance":"RN","nom":"Sylvie Bouchot","label":"RN","color":"#1565C0","bloc":"ex_droite"},
       {"nuance":"LR","nom":"Cédric Rivet-Sow","label":"LR","color":"#0D47A1","bloc":"droite"},
-      {"nuance":"REC","nom":"Lydie Cousty","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"REC","nom":"Lydie Cousty","label":"Reconquête","color":"#362F1C","bloc":"ex_droite"},
       {"nuance":"NPA","nom":"Sébastien Sugranes","label":"NPA","color":"#D32F2F","bloc":"ex_gauche"},
       {"nuance":"LO","nom":"Christine Samson","label":"LO","color":"#B71C1C","bloc":"ex_gauche"},
       {"nuance":"DIV","nom":"Charles Mariaud","label":"DIV","color":"#78909C","bloc":"autre"}
@@ -41,7 +41,7 @@
     "participation": 45.76,
     "inscrits": 31947,
     "candidates": [
-      {"nuance":"REC","nom":"Marion Maréchal","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"REC","nom":"Marion Maréchal","label":"Reconquête","color":"#362F1C","bloc":"ex_droite"},
       {"nuance":"LFI","nom":"Manon Aubry","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
       {"nuance":"RN","nom":"Jordan Bardella","label":"RN","color":"#1565C0","bloc":"ex_droite"},
       {"nuance":"EELV","nom":"Marie Toussaint","label":"EELV","color":"#4CAF50","bloc":"gauche"},
@@ -75,7 +75,7 @@
       {"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
       {"nuance":"RES","nom":"Jean Lassalle","label":"RES","color":"#78909C","bloc":"centre"},
       {"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"},
-      {"nuance":"REC","nom":"Éric Zemmour","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+      {"nuance":"REC","nom":"Éric Zemmour","label":"Reconquête","color":"#362F1C","bloc":"ex_droite"},
       {"nuance":"LFI","nom":"Jean-Luc Mélenchon","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
       {"nuance":"PS","nom":"Anne Hidalgo","label":"PS","color":"#EC407A","bloc":"gauche"},
       {"nuance":"EELV","nom":"Yannick Jadot","label":"EELV","color":"#4CAF50","bloc":"gauche"},
@@ -91,17 +91,17 @@
     "participation": 71.80,
     "inscrits": 29238,
     "candidates": [
-      {"nuance":"DLF","nom":"DUPONT-AIGNAN Nicolas","label":"DLF","color":"#E53935","bloc":"ex_droite"},
-      {"nuance":"FN","nom":"LE PEN Marine","label":"FN","color":"#1E88E5","bloc":"ex_droite"},
-      {"nuance":"LREM","nom":"MACRON Emmanuel","label":"LREM","color":"#43A047","bloc":"centre"},
-      {"nuance":"PS","nom":"HAMON Benoît","label":"PS","color":"#FB8C00","bloc":"gauche"},
-      {"nuance":"LO","nom":"ARTHAUD Nathalie","label":"LO","color":"#8E24AA","bloc":"ex_gauche"},
-      {"nuance":"NPA","nom":"POUTOU Philippe","label":"NPA","color":"#00ACC1","bloc":"ex_gauche"},
-      {"nuance":"S&P","nom":"CHEMINADE Jacques","label":"S&P","color":"#F4511E","bloc":"autre"},
-      {"nuance":"RES","nom":"LASSALLE Jean","label":"RES","color":"#039BE5","bloc":"droite"},
-      {"nuance":"LFI","nom":"MÉLENCHON Jean-Luc","label":"LFI","color":"#7CB342","bloc":"gauche_rad"},
-      {"nuance":"UPR","nom":"ASSELINEAU François","label":"UPR","color":"#FFB300","bloc":"ex_droite"},
-      {"nuance":"LR","nom":"FILLON François","label":"LR","color":"#E53935","bloc":"droite"}
+      {"nuance":"DLF","nom":"DUPONT-AIGNAN Nicolas","label":"DLF","color":"#1A237E","bloc":"ex_droite"},
+      {"nuance":"FN","nom":"LE PEN Marine","label":"FN","color":"#1565C0","bloc":"ex_droite"},
+      {"nuance":"LREM","nom":"MACRON Emmanuel","label":"LREM","color":"#FF8F00","bloc":"centre"},
+      {"nuance":"PS","nom":"HAMON Benoît","label":"PS","color":"#EC407A","bloc":"gauche"},
+      {"nuance":"LO","nom":"ARTHAUD Nathalie","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"NPA","nom":"POUTOU Philippe","label":"NPA","color":"#D32F2F","bloc":"ex_gauche"},
+      {"nuance":"S&P","nom":"CHEMINADE Jacques","label":"S&P","color":"#997C7C","bloc":"autre"},
+      {"nuance":"RES","nom":"LASSALLE Jean","label":"RES","color":"#78909C","bloc":"droite"},
+      {"nuance":"LFI","nom":"MÉLENCHON Jean-Luc","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
+      {"nuance":"UPR","nom":"ASSELINEAU François","label":"UPR","color":"#77826C","bloc":"ex_droite"},
+      {"nuance":"LR","nom":"FILLON François","label":"LR","color":"#0D47A1","bloc":"droite"}
     ]
   }
 ]
