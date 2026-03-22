@@ -84,26 +84,25 @@
       {"nuance":"DLF","nom":"Nicolas Dupont-Aignan","label":"DLF","color":"#1A237E","bloc":"ex_droite"}
     ]
   },
-  {
+    {
     "id": "PRE17-1",
-    "label": "Présidentielle 20171er tour (23/04/2017)",
-    "date": "??/??/????",
-    "participation": 0,
-    "inscrits": 0,
+    "label": "Présidentielle 2017 - 1er tour",
+    "date": "23/04/2017",
+    "participation": 71.80,
+    "inscrits": 29238,
     "candidates": [
-      {"nuance":"DUPONT-A","nom":"DUPONT-AIGNAN Nicolas","label":"DLF","color":"#E53935","bloc":"extreme-droite"},
-      {"nuance":"LE","nom":"LE PEN Marine","label":"FN","color":"#1E88E5","bloc":"extremme-droite"},
-      {"nuance":"MACRON","nom":"MACRON Emmanuel","label":"LREM","color":"#43A047","bloc":"cecentre"},
-      {"nuance":"HAMON","nom":"HAMON Benoît","label":"PS","color":"#FB8C00","bloc":"gauche"},
-      {"nuance":"ARTHAUD","nom":"ARTHAUD Nathalie","label":"LO","color":"#8E24AA","bloc":"extreme-gauche"},
-      {"nuance":"POUTOU","nom":"POUTOU Philippe","label":"NPA","color":"#00ACC1","bloc":"extreme-gauche"},
-      {"nuance":"CHEMINAD","nom":"CHEMINADE Jacques","label":"SP","color":"#F4511E","bloc":"extreme-droite"},
-      {"nuance":"LASSALLE","nom":"LASSALLE Jean","label":"res","color":"#039BE5","bloc":"droite"},
-      {"nuance":"MÉLENCHO","nom":"MÉLENCHON Jean-Luc","label":"LFI","color":"#7CB342","bloc":"gauche-radicale"},
-      {"nuance":"ASSELINE","nom":"ASSELINEAU François","label":"UPR","color":"#FFB300","bloc":"extreme-droite"},
-      {"nuance":"FILLON","nom":"FILLON François","label":"LR","color":"#E53935","bloc":"droite"}
+      {"nuance":"DLF","nom":"DUPONT-AIGNAN Nicolas","label":"DLF","color":"#E53935","bloc":"ex_droite"},
+      {"nuance":"FN","nom":"LE PEN Marine","label":"FN","color":"#1E88E5","bloc":"ex_droite"},
+      {"nuance":"LREM","nom":"MACRON Emmanuel","label":"LREM","color":"#43A047","bloc":"centre"},
+      {"nuance":"PS","nom":"HAMON Benoît","label":"PS","color":"#FB8C00","bloc":"gauche"},
+      {"nuance":"LO","nom":"ARTHAUD Nathalie","label":"LO","color":"#8E24AA","bloc":"ex_gauche"},
+      {"nuance":"NPA","nom":"POUTOU Philippe","label":"NPA","color":"#00ACC1","bloc":"ex_gauche"},
+      {"nuance":"S&P","nom":"CHEMINADE Jacques","label":"S&P","color":"#F4511E","bloc":"autre"},
+      {"nuance":"RES","nom":"LASSALLE Jean","label":"RES","color":"#039BE5","bloc":"droite"},
+      {"nuance":"LFI","nom":"MÉLENCHON Jean-Luc","label":"LFI","color":"#7CB342","bloc":"gauche_rad"},
+      {"nuance":"UPR","nom":"ASSELINEAU François","label":"UPR","color":"#FFB300","bloc":"ex_droite"},
+      {"nuance":"LR","nom":"FILLON François","label":"LR","color":"#E53935","bloc":"droite"}
     ]
   }
-
 ]
 
