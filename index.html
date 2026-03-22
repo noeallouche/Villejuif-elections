@@ -430,7 +430,7 @@ function setCandMode(nuance,col,nm,mx,avg){
   const e=['match',['get','id_bv']];
   (CUR_DATA||[]).forEach(r=>{
     const v=parseInt(r[nuance])||0,t=r.exp>0&&mx>0?(v/r.exp*100)/mx:0;
-    e.push(String(parseInt(r.bv)),blend(col,t));
+    e.push(parseInt(r.bv), blend(col,t));
   });
   e.push('#1e1e23');
   if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);
@@ -486,10 +486,7 @@ function bvColor(row,m){
 }
 function buildColorExpr(){
   const e=['match',['get','id_bv']];
-  (CUR_DATA||[]).forEach(r=>{
-    // id_bv dans le GeoJSON est un string, on force la correspondance en string
-    e.push(String(parseInt(r.bv)), bvColor(r,mode));
-  });
+  (CUR_DATA||[]).forEach(r=>e.push(parseInt(r.bv), bvColor(r,mode)));
   if(e.length<4) return '#444';
   e.push('#444');
   return e;
