@@ -6,14 +6,14 @@
 "participation": 48.04,
 "inscrits": 32689,
 "candidates": [
-{"nuance":"LCOM","nom":"Pierre Garzon","label":"PCF-EELV","color":"#C2185B","bloc":"gauche"},
+{"nuance":"PCF","nom":"Pierre Garzon","label":"PCF-EELV","color":"#C2185B","bloc":"gauche"},
 {"nuance":"LFI","nom":"Djamel Arrouche","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
-{"nuance":"LPS","nom":"Sylvie Mantion","label":"PS","color":"#EC407A","bloc":"gauche"},
-{"nuance":"LDVG","nom":"Rabah Bahloul","label":"DVG","color":"#E53935","bloc":"gauche"},
-{"nuance":"LDVG2","nom":"Sandra Da Silva","label":"DVG","color":"#E57373","bloc":"gauche"},
-{"nuance":"LEXG","nom":"Agathe Martin","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
-{"nuance":"LMDM","nom":"Christel Esclangon","label":"MoDem","color":"#FF8F00","bloc":"centre"},
-{"nuance":"LDIV","nom":"Ilyas Touzani","label":"DIV","color":"#78909C","bloc":"autre"},
+{"nuance":"PS","nom":"Sylvie Mantion","label":"PS","color":"#EC407A","bloc":"gauche"},
+{"nuance":"DVG","nom":"Rabah Bahloul","label":"DVG","color":"#E53935","bloc":"gauche"},
+{"nuance":"DVG","nom":"Sandra Da Silva","label":"DVG","color":"#E57373","bloc":"gauche"},
+{"nuance":"LO","nom":"Agathe Martin","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
+{"nuance":"MOD","nom":"Christel Esclangon","label":"MoDem","color":"#FF8F00","bloc":"centre"},
+{"nuance":"DIV","nom":"Ilyas Touzani","label":"DIV","color":"#78909C","bloc":"autre"},
 {"nuance":"LR","nom":"Franck Conquet","label":"LR","color":"#1565C0","bloc":"droite"}
 ]
 },
@@ -41,14 +41,14 @@
 "participation": 71.87,
 "inscrits": 30738,
 "candidates": [
-{"nuance":"MEL","nom":"Jean-Luc Mélenchon","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
-{"nuance":"MAC","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
-{"nuance":"LPN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"},
-{"nuance":"ZEM","nom":"Éric Zemmour","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
-{"nuance":"JAD","nom":"Yannick Jadot","label":"EELV","color":"#2E7D32","bloc":"gauche"},
-{"nuance":"PEC","nom":"Valérie Pécresse","label":"LR","color":"#0D47A1","bloc":"droite"},
-{"nuance":"ROU","nom":"Fabien Roussel","label":"PCF","color":"#C2185B","bloc":"gauche"},
-{"nuance":"HID","nom":"Anne Hidalgo","label":"PS","color":"#EC407A","bloc":"gauche"},
+{"nuance":"LFI","nom":"Jean-Luc Mélenchon","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
+{"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
+{"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"},
+{"nuance":"R!","nom":"Éric Zemmour","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+{"nuance":"EELV","nom":"Yannick Jadot","label":"EELV","color":"#2E7D32","bloc":"gauche"},
+{"nuance":"LR","nom":"Valérie Pécresse","label":"LR","color":"#0D47A1","bloc":"droite"},
+{"nuance":"PCF","nom":"Fabien Roussel","label":"PCF","color":"#C2185B","bloc":"gauche"},
+{"nuance":"PS","nom":"Anne Hidalgo","label":"PS","color":"#EC407A","bloc":"gauche"},
 {"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
 ]
 },
@@ -59,8 +59,8 @@
 "participation": 64.70,
 "inscrits": 30755,
 "candidates": [
-{"nuance":"MAC","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
-{"nuance":"LPN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"}
+{"nuance":"ENS","nom":"Emmanuel Macron","label":"LREM","color":"#FF8F00","bloc":"centre"},
+{"nuance":"RN","nom":"Marine Le Pen","label":"RN","color":"#1565C0","bloc":"ex_droite"}
 ]
 },
 {
@@ -72,10 +72,10 @@
 "candidates": [
 {"nuance":"NFP","nom":"Sophie Taillé-Polian","label":"NUPES","color":"#C2185B","bloc":"gauche"},
 {"nuance":"ENS","nom":"Éric Calvez","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
-{"nuance":"ENS2","nom":"Marie Gabelica","label":"Ensemble","color":"#FFB300","bloc":"centre"},
+{"nuance":"ENS","nom":"Marie Gabelica","label":"Ensemble","color":"#FFB300","bloc":"centre"},
 {"nuance":"DVG","nom":"M. Bounegta","label":"DVG","color":"#E53935","bloc":"gauche"},
-{"nuance":"DVG2","nom":"Mme Rocheteau","label":"DVG","color":"#E57373","bloc":"gauche"},
-{"nuance":"DVG3","nom":"Mme Milamon","label":"DVG","color":"#EC407A","bloc":"gauche"},
+{"nuance":"DVG","nom":"Mme Rocheteau","label":"DVG","color":"#E57373","bloc":"gauche"},
+{"nuance":"DVG","nom":"Mme Milamon","label":"DVG","color":"#EC407A","bloc":"gauche"},
 {"nuance":"AUTRES","nom":"Autres candidats","label":"Autres","color":"#607D8B","bloc":"autre"}
 ]
 },
