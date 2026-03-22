@@ -28,7 +28,7 @@
 {"nuance":"ENS","nom":"Nathalie Picot","label":"Ensemble","color":"#FF8F00","bloc":"centre"},
 {"nuance":"RN","nom":"Sylvie Bouchot","label":"RN","color":"#1565C0","bloc":"ex_droite"},
 {"nuance":"LR","nom":"Cédric Rivet-Sow","label":"LR","color":"#0D47A1","bloc":"droite"},
-{"nuance":"REC","nom":"Lydie Cousty","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
+{"nuance":"R!","nom":"Lydie Cousty","label":"Reconquête","color":"#7B1FA2","bloc":"ex_droite"},
 {"nuance":"NPA","nom":"Sébastien Sugranes","label":"NPA","color":"#D32F2F","bloc":"ex_gauche"},
 {"nuance":"LO","nom":"Christine Samson","label":"LO","color":"#B71C1C","bloc":"ex_gauche"},
 {"nuance":"DIV","nom":"Charles Mariaud","label":"DIV","color":"#78909C","bloc":"autre"}
