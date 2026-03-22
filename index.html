@@ -415,6 +415,8 @@ function zoomToBV(key){
 }
 
 // ─── Highlight + tooltip depuis le panel (survol) ────────────────────────────
+// Approche fiable : on utilise l'index dans GEO directement (generateId:true
+// dans MapLibre assigne des IDs numériques séquentiels = index du tableau)
 function panelHover(key){
   if(!map||!map.getSource('bv'))return;
 
@@ -424,20 +426,14 @@ function panelHover(key){
     panelHovId=null;
   }
 
-  // Fermer le tooltip si on quitte
+  // Quitter → fermer le popup panel et sortir
   if(key===null){
-    // Ne fermer le popup que s'il vient du panel (pas de la carte)
     if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
     return;
   }
 
-  // Chercher la feature dans MapLibre
-  const feat=map.querySourceFeatures('bv',{sourceLayer:''}).find(f=>f.properties.id_bv===String(key));
-  if(feat){
-    panelHovId=feat.id;
-    map.setFeatureState({source:'bv',id:panelHovId},{hover:true});
-  } else if(GEO){
-    // Fallback : index dans GEO
+  // Trouver l'index dans GEO (= ID MapLibre garanti grâce à generateId:true)
+  if(GEO){
     const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));
     if(idx>=0){
       panelHovId=idx;
@@ -445,14 +441,11 @@ function panelHover(key){
     }
   }
 
-  // Afficher le tooltip centré sur le polygone
+  // Afficher le tooltip au centre géographique du polygone
   const center=getFeatureCenter(key);
   if(center&&popup){
-    popup
-      .setLngLat(center)
-      .setHTML(buildTT(key))
-      .addTo(map);
     popup._panelSource=true;
+    popup.setLngLat(center).setHTML(buildTT(key)).addTo(map);
   }
 }
 
@@ -743,7 +736,7 @@ function initMap(){
     map.on('mouseleave','bv-fill',()=>{
       map.getCanvas().style.cursor='';
       // Ne fermer le popup que s'il vient de la carte (pas du panel)
-      if(!popup._panelSource)popup.remove();
+      if(popup&&!popup._panelSource)popup.remove();
       if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}
     });
     map.on('mousemove','bv-fill',e=>{
@@ -751,9 +744,8 @@ function initMap(){
       const f=e.features[0],k=f.properties.id_bv;
       if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});
       hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});
-      // Le popup vient de la carte, pas du panel
-      popup._panelSource=false;
-      popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);
+      // Ce popup vient de la carte → marquer comme tel
+      if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}
     });
     map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
     document.getElementById('ld').classList.add('h');
