@@ -378,12 +378,25 @@ function renderGlobal(){
   rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);
 }
 
+// ─── Calcule le centre géographique d'un polygone GeoJSON ────────────────────
+function getFeatureCenter(key){
+  if(!GEO)return null;
+  const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
+  if(!feat)return null;
+  const coords=feat.geometry.type==='Polygon'
+    ?feat.geometry.coordinates[0]
+    :feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);
+  if(!coords||!coords.length)return null;
+  let sumLng=0,sumLat=0;
+  coords.forEach(([lng,lat])=>{sumLng+=lng;sumLat+=lat;});
+  return[sumLng/coords.length, sumLat/coords.length];
+}
+
 // ─── Zoom vers un bureau sur la carte ────────────────────────────────────────
 function zoomToBV(key){
   if(!map||!GEO)return;
   const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
   if(!feat)return;
-  // Calculer les bounds du polygone
   const coords=feat.geometry.type==='Polygon'
     ?feat.geometry.coordinates[0]
     :feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);
@@ -401,28 +414,45 @@ function zoomToBV(key){
   });
 }
 
-// ─── Highlight d'un bureau depuis le panel (survol) ──────────────────────────
+// ─── Highlight + tooltip depuis le panel (survol) ────────────────────────────
 function panelHover(key){
   if(!map||!map.getSource('bv'))return;
+
+  // Retirer l'ancien highlight
   if(panelHovId!==null){
     map.setFeatureState({source:'bv',id:panelHovId},{hover:false});
     panelHovId=null;
   }
-  if(key===null)return;
-  // Trouver l'id interne MapLibre de la feature
+
+  // Fermer le tooltip si on quitte
+  if(key===null){
+    // Ne fermer le popup que s'il vient du panel (pas de la carte)
+    if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
+    return;
+  }
+
+  // Chercher la feature dans MapLibre
   const feat=map.querySourceFeatures('bv',{sourceLayer:''}).find(f=>f.properties.id_bv===String(key));
   if(feat){
     panelHovId=feat.id;
     map.setFeatureState({source:'bv',id:panelHovId},{hover:true});
-  } else {
-    // Fallback : chercher par index dans GEO
-    if(GEO){
-      const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));
-      if(idx>=0){
-        panelHovId=idx;
-        map.setFeatureState({source:'bv',id:panelHovId},{hover:true});
-      }
+  } else if(GEO){
+    // Fallback : index dans GEO
+    const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));
+    if(idx>=0){
+      panelHovId=idx;
+      map.setFeatureState({source:'bv',id:panelHovId},{hover:true});
     }
+  }
+
+  // Afficher le tooltip centré sur le polygone
+  const center=getFeatureCenter(key);
+  if(center&&popup){
+    popup
+      .setLngLat(center)
+      .setHTML(buildTT(key))
+      .addTo(map);
+    popup._panelSource=true;
   }
 }
 
@@ -476,7 +506,7 @@ function openCP(nuance){
   document.getElementById('cp-m').textContent=`${fN(gv)} voix · ${fP(gp)} des exprimés`;
   const best=scores[0],worst=scores[scores.length-1];
   let body=`<div class="cps"><div class="cpst">Chiffres clés</div><div class="kg"><div class="kc"><div class="kv" style="color:${col}">${fP(gp)}</div><div class="kl">Score global</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(best?best.pct:0)}</div><div class="kl">Meilleur BV</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(worst?worst.pct:0)}</div><div class="kl">Moins bon BV</div></div></div></div>`;
-  body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir le bureau</div>`;
+  body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir le bureau · Survolez pour voir sur la carte</div>`;
   scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'rgba(255,255,255,.35)';body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span><span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
   body+=`</div>`;
   if(corrs.length>0){
@@ -520,6 +550,8 @@ function showBV(key){
   rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
+  // Fermer le tooltip du panel avant de zoomer
+  if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
   // Zoom sur le bureau dans la carte
   zoomToBV(key);
 }
@@ -700,7 +732,6 @@ function initMap(){
       lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}
     },layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],
     glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},
-    // Zoom initial ajusté pour voir toute la commune de Villejuif
     center:[2.362,48.793],zoom:13.3,minZoom:12,maxZoom:18
   });
   map.on('load',()=>{
@@ -709,12 +740,19 @@ function initMap(){
     map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
     popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
     map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');
-    map.on('mouseleave','bv-fill',()=>{map.getCanvas().style.cursor='';popup.remove();if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}});
+    map.on('mouseleave','bv-fill',()=>{
+      map.getCanvas().style.cursor='';
+      // Ne fermer le popup que s'il vient de la carte (pas du panel)
+      if(!popup._panelSource)popup.remove();
+      if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}
+    });
     map.on('mousemove','bv-fill',e=>{
       if(!e.features.length)return;
       const f=e.features[0],k=f.properties.id_bv;
       if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});
       hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});
+      // Le popup vient de la carte, pas du panel
+      popup._panelSource=false;
       popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);
     });
     map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
