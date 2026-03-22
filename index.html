@@ -392,24 +392,15 @@ function getFeatureCenter(key){
   return[sumLng/coords.length, sumLat/coords.length];
 }
 
-// ─── Zoom vers un bureau sur la carte ────────────────────────────────────────
+// ─── Zoom vers un bureau sur la carte (flyTo fluide) ─────────────────────────
 function zoomToBV(key){
   if(!map||!GEO)return;
-  const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
-  if(!feat)return;
-  const coords=feat.geometry.type==='Polygon'
-    ?feat.geometry.coordinates[0]
-    :feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);
-  if(!coords||!coords.length)return;
-  let minLng=Infinity,maxLng=-Infinity,minLat=Infinity,maxLat=-Infinity;
-  coords.forEach(([lng,lat])=>{
-    if(lng<minLng)minLng=lng;if(lng>maxLng)maxLng=lng;
-    if(lat<minLat)minLat=lat;if(lat>maxLat)maxLat=lat;
-  });
-  map.fitBounds([[minLng,minLat],[maxLng,maxLat]],{
-    padding:{top:80,bottom:80,left:80,right:80},
-    maxZoom:16.5,
-    duration:600,
+  const center=getFeatureCenter(key);
+  if(!center)return;
+  map.flyTo({
+    center:center,
+    zoom:Math.max(map.getZoom(),15.5),
+    duration:800,
     essential:true
   });
 }
@@ -559,9 +550,10 @@ function closeBV(){
 // ─── Zoom global sur Villejuif ───────────────────────────────────────────────
 function zoomToCity(){
   if(!map)return;
-  map.fitBounds([[2.334,48.779],[2.390,48.808]],{
-    padding:{top:20,bottom:20,left:20,right:20},
-    duration:600,
+  map.flyTo({
+    center:[2.362,48.793],
+    zoom:13.3,
+    duration:700,
     essential:true
   });
 }
