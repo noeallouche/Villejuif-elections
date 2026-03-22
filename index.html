@@ -253,36 +253,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 const DATA_BASE='./data/';
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
 let mode='winner',excl=new Set(),curCand=null;
-let selId=null;
-
-function selectBVOnMap(key){
-  if(selId!==null)map.setFeatureState({source:'bv',id:selId},{selected:false});
-  selId=null;
-  if(!key||!GEO)return;
-  const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
-  if(!feat)return;
-  // Trouve l'id MapLibre (generateId)
-  const features=map.querySourceFeatures('bv',{filter:['==','id_bv',parseInt(key)||String(key)]});
-  // Fallback : cherche par index
-  const allFeats=map.querySourceFeatures('bv');
-  const target=allFeats.find(f=>String(f.properties.id_bv)===String(parseInt(key)));
-  if(target){
-    selId=target.id;
-    map.setFeatureState({source:'bv',id:selId},{selected:true});
-  }
-  // Zoom sur le bureau
-  if(feat.geometry&&feat.geometry.coordinates){
-    const coords=feat.geometry.coordinates[0];
-    const lngs=coords.map(c=>c[0]),lats=coords.map(c=>c[1]);
-    const bounds=[[Math.min(...lngs),Math.min(...lats)],[Math.max(...lngs),Math.max(...lats)]];
-    map.fitBounds(bounds,{padding:80,maxZoom:16,duration:600,essential:true});
-  }
-}
-
-function resetMapView(){
-  if(selId!==null){map.setFeatureState({source:'bv',id:selId},{selected:false});selId=null;}
-  map.flyTo({center:[2.3647,48.7920],zoom:13.2,duration:600,essential:true});
-}
+let map,popup,hovId=null;
 
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
 const fN=v=>v.toLocaleString('fr-FR');
@@ -501,13 +472,11 @@ function showBV(key){
   rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
-  if(map&&map.getSource('bv'))selectBVOnMap(key);
 }
 function closeBV(){
   const d=document.getElementById('bvd');d.classList.remove('vis');
-  setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},400);
+  setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));
-  if(map&&map.getSource('bv'))resetMapView();
 }
 
 function sTab(name){
@@ -669,21 +638,12 @@ function initMap(){
       lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}
     },layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],
     glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},
-    center:[2.3647,48.7920],zoom:13.2,minZoom:11,maxZoom:18
+    center:[2.3603,48.7934],zoom:13.8,minZoom:12,maxZoom:18
   });
   map.on('load',()=>{
     map.addSource('bv',{type:'geojson',data:GEO,generateId:true});
-    map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.92,0.72]}});
-    map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{
-      'line-color':['case',['boolean',['feature-state','selected'],false],'#ffffff',['case',['boolean',['feature-state','hover'],false],'rgba(255,255,255,0.9)','rgba(255,255,255,0.25)']],
-      'line-width':['case',['boolean',['feature-state','selected'],false],3,['case',['boolean',['feature-state','hover'],false],1.8,0.6]]
-    }});
-    map.addLayer({id:'bv-selected-glow',type:'line',source:'bv',paint:{
-      'line-color':'rgba(255,255,255,0.25)',
-      'line-width':8,
-      'line-blur':6,
-      'line-opacity':['case',['boolean',['feature-state','selected'],false],1,0]
-    }});
+    map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});
+    map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
     popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
     map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','bv-fill',()=>{map.getCanvas().style.cursor='';popup.remove();if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}});
