@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Observatoire électoral — Villejuif</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -61,7 +60,16 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .rb:hover{background:rgba(255,255,255,.04)}
 .rb.ck::after{content:"→";position:absolute;right:2px;top:7px;font-size:10px;color:rgba(255,255,255,.2)}
 .rb.ck:hover::after{color:rgba(255,255,255,.6)}
-@keyframes fsi{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fsi{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes barGrow{from{width:0!important}to{}}
+.pane.active{animation:fadeIn .25s ease}
+.kc{animation:slideUp .3s ease both}
+.kc:nth-child(2){animation-delay:.05s}
+.kc:nth-child(3){animation-delay:.1s}
+.rf{animation:barGrow .6s cubic-bezier(.22,.61,.36,1) both}
+.bvr{animation:fsi .25s ease both}
 .rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rp{width:44px;text-align:right;font-family:var(--fd);font-size:14px;font-weight:600;flex-shrink:0}
 .rv{width:46px;text-align:right;font-size:10px;color:var(--tm);flex-shrink:0}
@@ -118,7 +126,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .bvcd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .bvcp{font-family:var(--fd);font-size:12px;font-weight:600;margin-left:auto}
 .spark{display:flex;height:3px;border-radius:1px;overflow:hidden;margin-top:4px}
-#bvd{display:none;position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.22,.61,.36,1);z-index:30}
+#bvd{display:none;position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;transform:translateX(100%);transition:transform .4s cubic-bezier(.22,.61,.36,1);z-index:30}
 #bvd.vis{display:block;transform:translateX(0)}
 .dcl{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:11px;color:rgba(255,255,255,.5);font-family:inherit;transition:all .2s;font-weight:500}
 .dcl:hover{background:var(--acl);color:var(--ac);border-color:var(--ac)}
@@ -245,7 +253,36 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 const DATA_BASE='./data/';
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
 let mode='winner',excl=new Set(),curCand=null;
-let map,popup,hovId=null;
+let selId=null;
+
+function selectBVOnMap(key){
+  if(selId!==null)map.setFeatureState({source:'bv',id:selId},{selected:false});
+  selId=null;
+  if(!key||!GEO)return;
+  const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
+  if(!feat)return;
+  // Trouve l'id MapLibre (generateId)
+  const features=map.querySourceFeatures('bv',{filter:['==','id_bv',parseInt(key)||String(key)]});
+  // Fallback : cherche par index
+  const allFeats=map.querySourceFeatures('bv');
+  const target=allFeats.find(f=>String(f.properties.id_bv)===String(parseInt(key)));
+  if(target){
+    selId=target.id;
+    map.setFeatureState({source:'bv',id:selId},{selected:true});
+  }
+  // Zoom sur le bureau
+  if(feat.geometry&&feat.geometry.coordinates){
+    const coords=feat.geometry.coordinates[0];
+    const lngs=coords.map(c=>c[0]),lats=coords.map(c=>c[1]);
+    const bounds=[[Math.min(...lngs),Math.min(...lats)],[Math.max(...lngs),Math.max(...lats)]];
+    map.fitBounds(bounds,{padding:80,maxZoom:16,duration:600,essential:true});
+  }
+}
+
+function resetMapView(){
+  if(selId!==null){map.setFeatureState({source:'bv',id:selId},{selected:false});selId=null;}
+  map.flyTo({center:[2.3647,48.7920],zoom:13.2,duration:600,essential:true});
+}
 
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
 const fN=v=>v.toLocaleString('fr-FR');
@@ -320,9 +357,22 @@ function agg(){
   return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au};
 }
 
+function animCount(el,target,suffix=''){
+  const start=performance.now(),dur=600,from=0;
+  const fmt=v=>v>=1000?fN(Math.round(v)):Math.round(v)+'';
+  const tick=now=>{
+    const p=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    el.textContent=fmt(from+(target-from)*ease)+(suffix||'');
+    if(p<1)requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 function rKPIs(el,d){
   const p=d.inscrits>0?d.votants/d.inscrits*100:0;
-  el.innerHTML=`<div class="kc"><div class="kv">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;
+  el.innerHTML=`<div class="kc"><div class="kv" id="kv-ins">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv" id="kv-part">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv" id="kv-abs">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;
+  const insEl=el.querySelector('#kv-ins');
+  if(insEl&&d.inscrits>0)animCount(insEl,d.inscrits);
 }
 function rBal(el,d){
   const T=d.exprimes||1;
@@ -451,11 +501,13 @@ function showBV(key){
   rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
+  if(map&&map.getSource('bv'))selectBVOnMap(key);
 }
 function closeBV(){
   const d=document.getElementById('bvd');d.classList.remove('vis');
-  setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);
+  setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},400);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));
+  if(map&&map.getSource('bv'))resetMapView();
 }
 
 function sTab(name){
@@ -591,7 +643,9 @@ function toggleDrop(){
 async function selElection(eid){
   if(eid===CUR_EID)return;
   document.getElementById('lt').textContent=`Chargement ${eid}…`;
-  document.getElementById('ld').classList.remove('h');
+  const ld=document.getElementById('ld');
+  ld.style.transition='opacity .2s';
+  ld.classList.remove('h');
   CUR_EID=eid;excl.clear();curCand=null;
   document.getElementById('el').textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;
   document.getElementById('ed').classList.remove('open');
@@ -604,7 +658,7 @@ async function selElection(eid){
   document.getElementById('pane-r').classList.add('active');
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   renderGlobal();renderBVGrid();buildFC();setMode(mode);
-  document.getElementById('ld').classList.add('h');
+  setTimeout(()=>ld.classList.add('h'),150);
 }
 
 function initMap(){
@@ -615,12 +669,21 @@ function initMap(){
       lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}
     },layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],
     glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},
-    center:[2.3603,48.7934],zoom:13.8,minZoom:12,maxZoom:18
+    center:[2.3647,48.7920],zoom:13.2,minZoom:11,maxZoom:18
   });
   map.on('load',()=>{
     map.addSource('bv',{type:'geojson',data:GEO,generateId:true});
-    map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});
-    map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
+    map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.92,0.72]}});
+    map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{
+      'line-color':['case',['boolean',['feature-state','selected'],false],'#ffffff',['case',['boolean',['feature-state','hover'],false],'rgba(255,255,255,0.9)','rgba(255,255,255,0.25)']],
+      'line-width':['case',['boolean',['feature-state','selected'],false],3,['case',['boolean',['feature-state','hover'],false],1.8,0.6]]
+    }});
+    map.addLayer({id:'bv-selected-glow',type:'line',source:'bv',paint:{
+      'line-color':'rgba(255,255,255,0.25)',
+      'line-width':8,
+      'line-blur':6,
+      'line-opacity':['case',['boolean',['feature-state','selected'],false],1,0]
+    }});
     popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
     map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','bv-fill',()=>{map.getCanvas().style.cursor='';popup.remove();if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}});
