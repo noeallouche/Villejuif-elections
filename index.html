@@ -814,6 +814,12 @@ function initMap(){
     center:[2.362,48.793],zoom:13.3,minZoom:12,maxZoom:18
   });
   map.on('load',()=>{
+    // Appliquer le bon thème de tuiles dès que la carte est prête
+    const _light=document.documentElement.classList.contains('light');
+    if(_light){
+      map.getSource('carto').setTiles([TILE_LIGHT]);
+      map.getSource('lbl').setTiles(['https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png']);
+    }
     map.addSource('bv',{type:'geojson',data:GEO,generateId:true});
     map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});
     map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
@@ -875,26 +881,41 @@ async function init(){
 const TILE_LIGHT='https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png';
 const TILE_DARK='https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png';
 
-function applyTheme(light){
+function applyTheme(light, save=true){
   document.documentElement.classList.toggle('light', light);
   document.getElementById('icon-moon').style.display = light ? 'none' : '';
   document.getElementById('icon-sun').style.display  = light ? '' : 'none';
-  // Changer les tuiles de la carte
   if(map && map.getSource('carto')){
     try{ map.getSource('carto').setTiles([light ? TILE_LIGHT : TILE_DARK]); }catch(e){}
   }
-  try{ localStorage.setItem('theme', light ? 'light' : 'dark'); }catch(e){}
+  if(map && map.getSource('lbl')){
+    try{ map.getSource('lbl').setTiles([light
+      ? 'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png'
+      : 'https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'
+    ]); }catch(e){}
+  }
+  if(save){
+    try{ localStorage.setItem('theme', light ? 'light' : 'dark'); }catch(e){}
+  }
 }
 
 function toggleTheme(){
-  applyTheme(!document.documentElement.classList.contains('light'));
+  // Clic manuel → sauvegarder le choix
+  applyTheme(!document.documentElement.classList.contains('light'), true);
 }
 
-// Restaurer le thème au chargement
+// Au chargement : localStorage > préférence système
 (function(){
   try{
-    if(localStorage.getItem('theme')==='light'){
+    const saved = localStorage.getItem('theme');
+    let light;
+    if(saved === 'light')       light = true;
+    else if(saved === 'dark')   light = false;
+    else                        light = window.matchMedia('(prefers-color-scheme: light)').matches;
+
+    if(light){
       document.documentElement.classList.add('light');
+      // Icônes : le DOM n'est pas encore prêt, on corrige après
       document.addEventListener('DOMContentLoaded', function(){
         const moon = document.getElementById('icon-moon');
         const sun  = document.getElementById('icon-sun');
@@ -902,6 +923,11 @@ function toggleTheme(){
         if(sun)  sun.style.display  = '';
       });
     }
+
+    // Suivre les changements système EN DIRECT (si pas de choix manuel sauvegardé)
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e){
+      if(!localStorage.getItem('theme')) applyTheme(e.matches, false);
+    });
   }catch(e){}
 })();
 
