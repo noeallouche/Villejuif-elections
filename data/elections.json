@@ -10,10 +10,10 @@
 {"nuance":"LFI","nom":"Djamel Arrouche","label":"LFI","color":"#B71C1C","bloc":"gauche_rad"},
 {"nuance":"PS","nom":"Sylvie Mantion","label":"PS","color":"#EC407A","bloc":"gauche"},
 {"nuance":"DVG","nom":"Rabah Bahloul","label":"DVG","color":"#E53935","bloc":"gauche"},
-{"nuance":"DVG","nom":"Sandra Da Silva","label":"DVG","color":"#E57373","bloc":"gauche"},
+{"nuance":"VD!","nom":"Sandra Da Silva","label":"DVG","color":"#E57373","bloc":"gauche"},
 {"nuance":"LO","nom":"Agathe Martin","label":"LO","color":"#D32F2F","bloc":"ex_gauche"},
 {"nuance":"MOD","nom":"Christel Esclangon","label":"MoDem","color":"#FF8F00","bloc":"centre"},
-{"nuance":"DIV","nom":"Ilyas Touzani","label":"DIV","color":"#78909C","bloc":"autre"},
+{"nuance":"100%V","nom":"Ilyas Touzani","label":"DIV","color":"#78909C","bloc":"autre"},
 {"nuance":"LR","nom":"Franck Conquet","label":"LR","color":"#1565C0","bloc":"droite"}
 ]
 },
