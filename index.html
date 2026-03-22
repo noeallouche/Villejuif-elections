@@ -71,7 +71,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .kl{font-size:8px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
 .bb{height:10px;border-radius:5px;overflow:hidden;display:flex;margin-bottom:5px}
 .bbl{display:flex;flex-wrap:wrap;gap:3px 8px;font-size:10px;color:var(--tm);font-weight:500;margin-bottom:10px}
-.rb{display:flex;align-items:center;gap:5px;padding:5px 0 8px;border-bottom:1px solid var(--bd);font-size:11px;position:relative;opacity:0;animation:fsi .3s ease forwards;cursor:pointer;border-radius:4px;transition:background .15s}
+.rb{display:grid;grid-template-columns:28px 1fr 52px 38px;align-items:center;gap:0 6px;padding:5px 4px 8px;border-bottom:1px solid var(--bd);font-size:11px;position:relative;opacity:0;animation:fsi .3s ease forwards;cursor:pointer;border-radius:4px;transition:background .15s}
 .rb:last-child{border-bottom:none}
 .rb:hover{background:rgba(255,255,255,.04)}
 .rb.ck::after{content:"→";position:absolute;right:2px;top:7px;font-size:10px;color:rgba(255,255,255,.2)}
@@ -86,9 +86,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .kc:nth-child(3){animation-delay:.1s}
 .rf{animation:barGrow .6s cubic-bezier(.22,.61,.36,1) both}
 .bvr{animation:fsi .25s ease both}
-.rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
-.rp{width:48px;text-align:right;font-family:var(--fd);font-size:13px;font-weight:600;flex-shrink:0;white-space:nowrap}
-.rv{width:40px;text-align:right;font-size:10px;color:var(--tm);flex-shrink:0;white-space:nowrap}
+.rn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rp{text-align:right;font-family:var(--fd);font-size:13px;font-weight:600;white-space:nowrap}
+.rv{text-align:right;font-size:10px;color:var(--tm);white-space:nowrap}
 .rt{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.04);border-radius:1px}
 .rf{height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,.61,.36,1)}
 .nbdg{font-size:8px;font-weight:700;opacity:.5;flex-shrink:0}
@@ -692,7 +692,7 @@ function bvColor(row,m){
     const s=(t-.66)/.34;return`rgb(${Math.round(30-s*17)},${Math.round(111-s*40)},${Math.round(201-s*40)})`;
   }
   if(m==='gd'){
-    const tg=bv.voixEXG+bv.voixGR+bv.voixG,td=bv.voixDr+bv.voixEXD,tot=tg+td;
+    const tg=bv.voixEXG+bv.voixGR+bv.voixG,td=bv.voixDr+bv.voixEXD+bv.voixCen,tot=tg+td;
     if(!tot)return'#444';const r=tg/tot;
     if(r>=.5){const t=(r-.5)*2;return`rgb(255,${Math.round(255-t*219)},${Math.round(255-t*188)})`}
     const t=(.5-r)*2;return`rgb(${Math.round(255-t*234)},${Math.round(255-t*154)},${Math.round(255-t*63)})`;
@@ -724,7 +724,7 @@ function setMode(m){
     document.getElementById('pl-l').innerHTML='<span>35 %</span><span>52 %</span><span>70 %</span>';
   } else if(m==='gd'){
     const lg=document.getElementById('leg');lg.style.display='';
-    lg.innerHTML='<h4>Gauche / Droite</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#7B1FA2,#D32F2F,#fff,#1565C0,#1A237E)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Ext. G</span><span>Gauche</span><span>50/50</span><span>Droite</span><span>Ext. D</span></div>';
+    lg.innerHTML='<h4>Gauche / Droite + Centre</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#7B1FA2,#D32F2F,#fff,#1565C0,#1A237E)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Ext. G</span><span>Gauche</span><span>50/50</span><span>Dr.+Cen.</span><span>Ext. D</span></div>';
   } else if(m==='frag'){
     const lg=document.getElementById('leg');lg.style.display='';
     lg.innerHTML='<h4>Fragmentation (ENP)</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#00C853,#9C27B0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Faible</span><span>Moyen</span><span>Élevé</span></div>';
