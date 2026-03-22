@@ -253,7 +253,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 const DATA_BASE='./data/';
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
 let mode='winner',excl=new Set(),curCand=null;
-let map,popup,hovId=null,panelHovId=null;
+let map,popup,hovId=null,panelHovId=null,popupFromPanel=false;
 
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
 const fN=v=>v.toLocaleString('fr-FR');
@@ -419,7 +419,7 @@ function panelHover(key){
 
   // Quitter → fermer le popup panel et sortir
   if(key===null){
-    if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
+    if(popup){popup.remove();}popupFromPanel=false;
     return;
   }
 
@@ -435,7 +435,7 @@ function panelHover(key){
   // Afficher le tooltip au centre géographique du polygone
   const center=getFeatureCenter(key);
   if(center&&popup){
-    popup._panelSource=true;
+    popupFromPanel=true;
     popup.setLngLat(center).setHTML(buildTT(key)).addTo(map);
   }
 }
@@ -535,7 +535,7 @@ function showBV(key){
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
   // Fermer le tooltip du panel avant de zoomer
-  if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
+  if(popup){popup.remove();}popupFromPanel=false;
   // Zoom sur le bureau dans la carte
   zoomToBV(key);
 }
@@ -728,7 +728,7 @@ function initMap(){
     map.on('mouseleave','bv-fill',()=>{
       map.getCanvas().style.cursor='';
       // Ne fermer le popup que s'il vient de la carte (pas du panel)
-      if(popup&&!popup._panelSource)popup.remove();
+      if(popup&&!popupFromPanel)popup.remove();
       if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}
     });
     map.on('mousemove','bv-fill',e=>{
@@ -737,7 +737,7 @@ function initMap(){
       if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});
       hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});
       // Ce popup vient de la carte → marquer comme tel
-      if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}
+      popupFromPanel=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);
     });
     map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
     document.getElementById('ld').classList.add('h');
