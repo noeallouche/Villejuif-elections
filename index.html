@@ -71,7 +71,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .kl{font-size:8px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px}
 .bb{height:10px;border-radius:5px;overflow:hidden;display:flex;margin-bottom:5px}
 .bbl{display:flex;flex-wrap:wrap;gap:3px 8px;font-size:10px;color:var(--tm);font-weight:500;margin-bottom:10px}
-.rb{display:flex;align-items:baseline;gap:5px;padding:5px 0 8px;border-bottom:1px solid var(--bd);font-size:11px;position:relative;opacity:0;animation:fsi .3s ease forwards;cursor:pointer;border-radius:4px;transition:background .15s}
+.rb{display:flex;align-items:center;gap:5px;padding:5px 0 8px;border-bottom:1px solid var(--bd);font-size:11px;position:relative;opacity:0;animation:fsi .3s ease forwards;cursor:pointer;border-radius:4px;transition:background .15s}
 .rb:last-child{border-bottom:none}
 .rb:hover{background:rgba(255,255,255,.04)}
 .rb.ck::after{content:"→";position:absolute;right:2px;top:7px;font-size:10px;color:rgba(255,255,255,.2)}
@@ -86,9 +86,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .kc:nth-child(3){animation-delay:.1s}
 .rf{animation:barGrow .6s cubic-bezier(.22,.61,.36,1) both}
 .bvr{animation:fsi .25s ease both}
-.rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rp{width:44px;text-align:right;font-family:var(--fd);font-size:14px;font-weight:600;flex-shrink:0}
-.rv{width:46px;text-align:right;font-size:10px;color:var(--tm);flex-shrink:0}
+.rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.rp{width:48px;text-align:right;font-family:var(--fd);font-size:13px;font-weight:600;flex-shrink:0;white-space:nowrap}
+.rv{width:40px;text-align:right;font-size:10px;color:var(--tm);flex-shrink:0;white-space:nowrap}
 .rt{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.04);border-radius:1px}
 .rf{height:100%;border-radius:1px;transition:width .5s cubic-bezier(.22,.61,.36,1)}
 .nbdg{font-size:8px;font-weight:700;opacity:.5;flex-shrink:0}
@@ -585,12 +585,33 @@ function openCP(nuance){
   const best=scores[0],worst=scores[scores.length-1];
   let body=`<div class="cps"><div class="cpst">Chiffres clés</div><div class="kg"><div class="kc"><div class="kv" style="color:${col}">${fP(gp)}</div><div class="kl">Score global</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(best?best.pct:0)}</div><div class="kl">Meilleur BV</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(worst?worst.pct:0)}</div><div class="kl">Moins bon BV</div></div></div></div>`;
   body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir le bureau · Survolez pour voir sur la carte</div>`;
-  scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'rgba(255,255,255,.35)';body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span><span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
+  scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'var(--ts)';body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span><span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
   body+=`</div>`;
   if(corrs.length>0){
     body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;
     corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?'#1565C0':'#C62828',left=cr.r>=0?50:50-abs*50,w=abs*50,tc2=ctxt(cr.color),str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});
     body+=`</div>`;
+  }
+  // Corrélation avec la participation
+  {
+    const xs=keys.map(r=>r.ins>0?r.vot/r.ins*100:0);
+    const ys=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0);
+    const rPart=pearson(xs,ys);
+    const abs=Math.abs(rPart),fc=rPart>=0?'#1565C0':'#C62828';
+    const left=rPart>=0?50:50-abs*50,w=abs*50,sign=rPart>=0?'+':'';
+    const str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';
+    body+=`<div class="cps"><div class="cpst">Corrélation avec la participation</div>
+      <div class="ccr">
+        <div class="ccd" style="background:#64b5f6"></div>
+        <div class="ccn">Participation ↔ ${esc(nm)}</div>
+        <div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div>
+        <div class="ccv" style="color:${fc}">${sign}${rPart.toFixed(2)}</div>
+        <div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div>
+      </div>
+      <div style="font-size:9px;color:var(--tm);margin-top:6px;line-height:1.5">
+        ${rPart>0.3?'Score plus élevé dans les bureaux à forte participation.':rPart<-0.3?'Score plus élevé dans les bureaux à faible participation.':'Pas de lien net entre participation et score dans ce bureau.'}
+      </div>
+    </div>`;
   }
   document.getElementById('cp-b').innerHTML=body;
   document.querySelectorAll('.pane').forEach(p=>{p.style.display='none';p.classList.remove('active');});
@@ -764,16 +785,25 @@ function buildTT(key){
 }
 
 function buildDrop(){
-  const groups={};
+  // Ordre et labels des catégories
+  const TYPE_ORDER=['Municipales','Législatives','Présidentielle','Européennes','Régionales','Référendum','Autres'];
+  function getType(label){
+    for(const t of TYPE_ORDER) if(label.toLowerCase().startsWith(t.toLowerCase())) return t;
+    return 'Autres';
+  }
+  // Grouper par type puis par année
+  const byType={};
+  TYPE_ORDER.forEach(t=>byType[t]=[]);
   ELECTIONS.forEach(e=>{
-    const yr=e.date?e.date.slice(-4):'',type=e.label.split(' ')[0],gk=type+yr;
-    if(!groups[gk])groups[gk]={title:type+' '+yr,items:[]};
-    groups[gk].items.push(e);
+    const t=getType(e.label);
+    byType[t].push(e);
   });
   let h='';
-  Object.values(groups).forEach(g=>{
-    h+=`<div class="eg-title">${esc(g.title)}</div>`;
-    g.items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);
+  TYPE_ORDER.forEach(type=>{
+    const items=byType[type];
+    if(!items||!items.length)return;
+    h+=`<div class="eg-title">${esc(type)}</div>`;
+    items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);
   });
   document.getElementById('ed').innerHTML=h;
 }
