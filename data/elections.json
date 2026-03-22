@@ -37,11 +37,11 @@
 
 
   {
-    "id": "014-0",
+    "id": "EUR24",
     "label": "Européennes 2024(09/06/2024)",
-    "date": "??/??/????",
-    "participation": 0,
-    "inscrits": 0,
+    "date": "09/06/2024",
+    "participation": 45.76,
+    "inscrits": 31947,
     "candidates": [
       {"nuance":"R!","nom":"Mme Marion MARÉCHAL","label":"","color":"#78909C","bloc":"ex_droite"},
       {"nuance":"LFI","nom":"Mme Manon AUBRY","label":"","color":"#78909C","bloc":"gauche_rad"},
