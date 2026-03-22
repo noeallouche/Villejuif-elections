@@ -161,6 +161,157 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
   #ft{display:none}
   #leg,#pleg,#cleg{bottom:auto;top:calc(var(--nav)+8px);left:8px;padding:7px 10px}
 }
+
+/* ===== THÈME CLAIR ===== */
+html.light{
+  --bg:#f5f4f0;--sf:#ffffff;--tx:#1a1a1a;--ts:#4a4540;--tm:#8a8480;
+  --ac:#b8282e;--acl:rgba(184,40,46,.1);
+  --bd:rgba(0,0,0,.1);--bd2:rgba(0,0,0,.18);
+}
+html.light body{background:var(--bg);color:var(--tx);}
+html.light #nav{background:var(--bg);border-bottom-color:rgba(0,0,0,.08);}
+html.light .brand{color:#1a1a1a;}
+html.light .nsep{background:rgba(0,0,0,.12);}
+html.light .esel-btn{background:rgba(0,0,0,.05);color:#1a1a1a;}
+html.light .esel-drop{background:#fff;}
+html.light .ei{color:rgba(0,0,0,.65);}
+html.light .ei:hover{background:rgba(0,0,0,.04);color:#1a1a1a;}
+html.light .ei.active{color:#1a1a1a;}
+html.light .mbtn{color:rgba(0,0,0,.4);}
+html.light .mbtn:hover{color:rgba(0,0,0,.75);}
+html.light .mbtn.active{color:#1a1a1a;}
+html.light #panel{background:var(--sf);border-left-color:rgba(0,0,0,.08);}
+html.light .tab{color:rgba(0,0,0,.3);}
+html.light .tab:hover{color:rgba(0,0,0,.6);}
+html.light .tab.active{color:#1a1a1a;}
+html.light .kc{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.09);}
+html.light .kv{color:#1a1a1a;}
+html.light .kl{color:rgba(0,0,0,.35);}
+html.light .rb:hover{background:rgba(0,0,0,.03);}
+html.light .rb.ck::after{color:rgba(0,0,0,.2);}
+html.light .rb.ck:hover::after{color:rgba(0,0,0,.55);}
+html.light .rv{color:var(--tm);}
+html.light .rt{background:rgba(0,0,0,.06);}
+html.light .sh{color:rgba(0,0,0,.4);}
+html.light .fi:hover{background:rgba(0,0,0,.03);}
+html.light #rbtn{background:rgba(0,0,0,.04);color:rgba(0,0,0,.45);}
+html.light #rbtn:hover{background:var(--acl);color:var(--ac);}
+html.light .cpbk{background:rgba(0,0,0,.04);color:rgba(0,0,0,.45);}
+html.light .cph{background:var(--sf);}
+html.light .cpnm{color:#1a1a1a;}
+html.light .bvc{background:rgba(0,0,0,.03);}
+html.light .bvc:hover,.bvc.active{border-color:var(--ac);background:var(--acl);}
+html.light .bvcn{color:#1a1a1a;}
+html.light .dcl{background:rgba(0,0,0,.04);color:rgba(0,0,0,.45);}
+html.light .dcl:hover{background:var(--acl);color:var(--ac);}
+html.light #bvd{background:var(--sf);border-left-color:rgba(0,0,0,.08);}
+html.light #leg,html.light #pleg,html.light #cleg{background:rgba(245,244,240,.96);}
+html.light .li{color:var(--ts);}
+html.light .lc{color:var(--tm);}
+html.light .cst{color:rgba(0,0,0,.3);}
+html.light .cg,.html.light .ccg{background:rgba(0,0,0,.07);}
+html.light .cgc,.html.light .ccc{background:rgba(0,0,0,.2);}
+html.light #ft{background:rgba(240,239,235,.95);border-top-color:rgba(0,0,0,.08);color:rgba(0,0,0,.3);}
+html.light #ld{background:#f0efe9;}
+html.light .st{color:rgba(0,0,0,.35);}
+html.light .maplibregl-popup-content{background:rgba(255,255,255,.98)!important;border:1px solid rgba(0,0,0,.12)!important;color:#1a1a1a!important;}
+html.light .maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:rgba(255,255,255,.98)!important;}
+html.light .tt-t{color:#1a1a1a;}
+html.light .tt-m{color:var(--tm);}
+html.light .bvr:hover{background:rgba(0,0,0,.03);}
+html.light .bvr-b{background:rgba(0,0,0,.05);}
+html.light @media(max-width:900px){
+  html.light #panel{background:rgba(245,244,240,.98);}
+}
+/* Bouton thème */
+#theme-btn{
+  background:transparent;border:1px solid var(--bd2);border-radius:var(--rs);
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:all .2s;flex-shrink:0;color:var(--tx);
+  padding:0;
+}
+#theme-btn:hover{background:var(--acl);border-color:var(--ac);}
+
+/* ===== MODE CLAIR ===== */
+html.light{
+  --bg:#f4f2ee;--sf:#ffffff;--tx:#1a1a1a;--ts:#4a4540;--tm:#8a8078;
+  --bd:rgba(0,0,0,.09);--bd2:rgba(0,0,0,.15);
+  --acl:rgba(184,40,46,.08);
+}
+html.light body{background:var(--bg);color:var(--tx);}
+html.light #nav{background:var(--bg);border-bottom-color:rgba(0,0,0,.08);}
+html.light .brand{color:#111;}
+html.light .nsep{background:rgba(0,0,0,.12);}
+html.light .esel-btn{background:rgba(0,0,0,.05);color:#111;}
+html.light .esel-drop{background:#fff;}
+html.light .ei{color:rgba(0,0,0,.6);}
+html.light .ei:hover{background:rgba(0,0,0,.04);color:#111;}
+html.light .ei.active{color:#111;background:var(--acl);}
+html.light .mbtn{color:rgba(0,0,0,.4);}
+html.light .mbtn:hover{color:rgba(0,0,0,.75);}
+html.light .mbtn.active{color:#111;}
+html.light #panel{background:var(--sf);border-left-color:rgba(0,0,0,.08);}
+html.light .tab{color:rgba(0,0,0,.3);}
+html.light .tab:hover{color:rgba(0,0,0,.6);}
+html.light .tab.active{color:#111;}
+html.light #tc::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);}
+html.light .kc{background:rgba(0,0,0,.03);border-color:var(--bd);}
+html.light .kv{color:#111;}
+html.light .kl{color:rgba(0,0,0,.35);}
+html.light .rb:hover{background:rgba(0,0,0,.03);}
+html.light .rb.ck::after{color:rgba(0,0,0,.2);}
+html.light .rb.ck:hover::after{color:rgba(0,0,0,.5);}
+html.light .rt{background:rgba(0,0,0,.05);}
+html.light .rp{color:#111;}
+html.light .rv{color:var(--tm);}
+html.light .cpbk{background:rgba(0,0,0,.04);color:rgba(0,0,0,.5);}
+html.light .cph{background:var(--sf);}
+html.light .cpnm{color:#111;}
+html.light .bvr:hover{background:rgba(0,0,0,.03);}
+html.light .bvr-b{background:rgba(0,0,0,.05);}
+html.light .bvr-i{color:var(--tm);}
+html.light .bvr-l{color:var(--tm);}
+html.light .sh{color:rgba(0,0,0,.4);}
+html.light .fi:hover{background:rgba(0,0,0,.03);}
+html.light #rbtn{background:rgba(0,0,0,.04);color:rgba(0,0,0,.45);}
+html.light .cg{background:rgba(0,0,0,.07);}
+html.light .cgc{background:rgba(0,0,0,.15);}
+html.light .cst{color:rgba(0,0,0,.3);}
+html.light .bvc{background:rgba(0,0,0,.02);}
+html.light .bvcn{color:#111;}
+html.light .dcl{background:rgba(0,0,0,.04);color:rgba(0,0,0,.5);}
+html.light #bvd{background:var(--sf);border-left-color:rgba(0,0,0,.08);}
+html.light #leg,html.light #pleg,html.light #cleg{background:rgba(244,242,238,.95);}
+html.light #leg h4,html.light #pleg h4,html.light #cleg h4{color:var(--ac);}
+html.light .li{color:var(--ts);}
+html.light .lc{color:var(--tm);}
+html.light .gl{color:var(--tm);}
+html.light .maplibregl-popup-content{background:rgba(255,255,255,.98)!important;border-color:rgba(0,0,0,.12)!important;color:#1a1a1a!important;}
+html.light .tt-t{color:#111;}
+html.light .tt-m{color:var(--tm);}
+html.light #ft{background:rgba(244,242,238,.95);border-top-color:rgba(0,0,0,.07);color:rgba(0,0,0,.3);}
+html.light #ld{background:#e8e5df;}
+html.light .st{color:rgba(0,0,0,.3);}
+html.light .ccg{background:rgba(0,0,0,.07);}
+html.light .ccc{background:rgba(0,0,0,.15);}
+html.light .ccn{color:var(--ts);}
+html.light .ccv{color:inherit;}
+html.light .cr .cl{color:var(--ts);}
+html.light .cg{background:rgba(0,0,0,.06);}
+html.light .cv{color:inherit;}
+html.light .cs{color:var(--tm);}
+html.light table td,html.light table th{color:var(--ts)!important;}
+html.light .nbdg{opacity:.55;}
+/* Basemap clair */
+html.light #map canvas{filter:none;}
+/* Bouton thème */
+#theme-btn{
+  background:transparent;border:1px solid var(--bd2);border-radius:var(--rs);
+  padding:5px 8px;cursor:pointer;font-size:14px;line-height:1;
+  color:rgba(255,255,255,.6);transition:all .2s;flex-shrink:0;
+}
+html.light #theme-btn{color:rgba(0,0,0,.5);}
+#theme-btn:hover{background:var(--acl);border-color:var(--ac);}
 </style>
 </head>
 <body>
@@ -176,12 +327,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
     <div class="esel-drop" id="ed"></div>
   </div>
   <div class="nsep"></div>
+  <button id="theme-btn" onclick="toggleTheme()" title="Mode clair/sombre">🌙</button>
+  <div class="nsep"></div>
   <div class="nmodes">
     <button class="mbtn active" data-mode="winner"        onclick="setMode('winner')">Liste en tête</button>
     <button class="mbtn"        data-mode="participation" onclick="setMode('participation')">Participation</button>
     <button class="mbtn"        data-mode="gd"            onclick="setMode('gd')">Ratio G/D</button>
     <button class="mbtn"        data-mode="frag"          onclick="setMode('frag')">Fragmentation</button>
   </div>
+  <button id="theme-btn" onclick="toggleTheme()" title="Mode clair / sombre">🌙</button>
 </nav>
 
 <div id="map"></div>
@@ -253,7 +407,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 const DATA_BASE='./data/';
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
 let mode='winner',excl=new Set(),curCand=null;
-let map,popup,hovId=null,panelHovId=null,popupFromPanel=false;
+let map,popup,hovId=null,panelHovId=null;
 
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
 const fN=v=>v.toLocaleString('fr-FR');
@@ -419,7 +573,7 @@ function panelHover(key){
 
   // Quitter → fermer le popup panel et sortir
   if(key===null){
-    if(popup){popup.remove();}popupFromPanel=false;
+    if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
     return;
   }
 
@@ -435,7 +589,7 @@ function panelHover(key){
   // Afficher le tooltip au centre géographique du polygone
   const center=getFeatureCenter(key);
   if(center&&popup){
-    popupFromPanel=true;
+    popup._panelSource=true;
     popup.setLngLat(center).setHTML(buildTT(key)).addTo(map);
   }
 }
@@ -535,7 +689,7 @@ function showBV(key){
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
   // Fermer le tooltip du panel avant de zoomer
-  if(popup){popup.remove();}popupFromPanel=false;
+  if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
   // Zoom sur le bureau dans la carte
   zoomToBV(key);
 }
@@ -728,7 +882,7 @@ function initMap(){
     map.on('mouseleave','bv-fill',()=>{
       map.getCanvas().style.cursor='';
       // Ne fermer le popup que s'il vient de la carte (pas du panel)
-      if(popup&&!popupFromPanel)popup.remove();
+      if(popup&&!popup._panelSource)popup.remove();
       if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}
     });
     map.on('mousemove','bv-fill',e=>{
@@ -737,10 +891,11 @@ function initMap(){
       if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});
       hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});
       // Ce popup vient de la carte → marquer comme tel
-      popupFromPanel=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);
+      if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}
     });
     map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
     document.getElementById('ld').classList.add('h');
+    applyTheme(isLight);
     renderWinLeg();
   });
 }
@@ -755,6 +910,25 @@ async function loadCSV(eid){
     CUR_DATA=[];
   }
 }
+
+// ─── Thème clair / sombre ────────────────────────────────────────────────────
+const LIGHT_STYLE='https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png';
+const DARK_STYLE='https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png';
+let isLight=(localStorage.getItem('theme')==='light');
+function applyTheme(light){
+  isLight=light;
+  document.documentElement.classList.toggle('light',light);
+  document.getElementById('theme-btn').textContent=light?'🌙':'☀️';
+  localStorage.setItem('theme',light?'light':'dark');
+  // Basemap swap
+  if(map&&map.getSource('carto')){
+    try{map.getSource('carto').setTiles([light?LIGHT_STYLE:DARK_STYLE]);}catch(e){}
+  }
+}
+function toggleTheme(){applyTheme(!isLight);}
+// Appliquer au démarrage
+if(isLight)document.documentElement.classList.add('light');
+
 
 async function init(){
   document.getElementById('lt').textContent='Chargement des données…';
@@ -775,6 +949,26 @@ async function init(){
   renderGlobal();renderBVGrid();buildFC();
   initMap();
 }
+
+
+function toggleTheme(){
+  const isLight=document.documentElement.classList.toggle('light');
+  document.getElementById('theme-btn').textContent=isLight?'☀️':'🌙';
+  try{localStorage.setItem('theme',isLight?'light':'dark');}catch(e){}
+}
+// Restaurer le thème sauvegardé
+(function(){
+  try{
+    if(localStorage.getItem('theme')==='light'){
+      document.documentElement.classList.add('light');
+      // Le bouton n'existe pas encore au moment du IIFE, on le corrige après le DOM
+      document.addEventListener('DOMContentLoaded',function(){
+        const b=document.getElementById('theme-btn');
+        if(b)b.textContent='☀️';
+      });
+    }
+  }catch(e){}
+})();
 
 init();
 </script>
