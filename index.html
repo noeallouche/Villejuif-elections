@@ -787,16 +787,12 @@ async function init(){
 // ─── Hémicycle conseil municipal MUN26T2 ─────────────────────────────────────
 function renderHemicycle(container){
   container.innerHTML=`<div class="cpst" style="margin-bottom:10px">Composition du conseil municipal</div>
-<style>
-.ws-group rect{transition:opacity .15s;cursor:default;}
-.ws-group:hover rect{opacity:.75;}
-.ws-tooltip{pointer-events:none;}
-</style>
+<style>.ws-group rect{transition:opacity .15s;cursor:default;}.ws-group:hover rect{opacity:.75;}</style>
 <svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;display:block;margin:0 auto">
   <g id="diagram">
     <g id="headbench">
       <g class="ws-group" fill="#C2185B">
-        <title>PCF — Maire </title>
+        <title>Maire - PCF</title>
         <rect x="6.75" y="164.25" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
     </g>
@@ -823,39 +819,42 @@ function renderHemicycle(container){
         <rect x="146.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="146.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="181.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
+        <rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
       <g class="ws-group" fill="#AD1457">
         <title>CIT — 5 sièges (citoyens avec Garzon)</title>
-        <rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="181.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="181.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="216.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
-      </g>
-      <g class="ws-group" fill="#4CAF50">
-        <title>ECO — 3 sièges</title>
         <rect x="216.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="216.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="216.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
-      <g class="ws-group" fill="#62C167">
-        <title>GEN — 3 sièges</title>
+      <g class="ws-group" fill="#4CAF50">
+        <title>ECO — 3 sièges</title>
         <rect x="251.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="251.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="251.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
-      <g class="ws-group" fill="#EC407A">
-        <title>PS — 6 sièges</title>
+      <g class="ws-group" fill="#62C167">
+        <title>GEN — 3 sièges</title>
         <rect x="251.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="286.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="286.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
+      </g>
+      <g class="ws-group" fill="#EC407A">
+        <title>PS — 6 sièges</title>
         <rect x="286.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="286.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="321.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
+        <rect x="321.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
+        <rect x="321.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
+        <rect x="321.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
     </g>
     <g id="rightbench">
       <g class="ws-group" fill="#FF8F00">
-        <title>NPCV — 7 sièges (liste Esclangon)</title>
+        <title>NPCV — 7 sièges (liste Esclagnon)</title>
         <rect x="41.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="41.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
         <rect x="41.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
@@ -875,12 +874,9 @@ function renderHemicycle(container){
         <rect x="146.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/>
       </g>
     </g>
-    <!-- Séparateur majorité/opposition -->
     <line x1="6" y1="196" x2="354" y2="196" stroke="var(--bd2)" stroke-width="1.5" stroke-dasharray="4,4"/>
-    <!-- Label majorité -->
     <text x="354" y="192" text-anchor="end" font-size="9" fill="var(--tm)" font-family="sans-serif">majorité ↑</text>
     <text x="354" y="208" text-anchor="end" font-size="9" fill="var(--tm)" font-family="sans-serif">opposition ↓</text>
-    <!-- Compteur -->
     <text x="295" y="270" text-anchor="middle" font-size="42" font-weight="700" fill="var(--tx)" font-family="Georgia,serif">49</text>
     <text x="295" y="290" text-anchor="middle" font-size="10" fill="var(--tm)" font-family="sans-serif">CONSEILLERS</text>
   </g>
