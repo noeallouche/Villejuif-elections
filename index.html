@@ -330,51 +330,47 @@ function pointInFeature(point, feature) {
 }
 
 // ── Chargement RPLS ───────────────────────────────────────────────────────────
-async function loadRPLS() {
-  try {
-    document.getElementById('lt').textContent = 'Chargement logements sociaux (Local 2024)…';
-    
-    // 1. On récupère ton fichier local
-    const res = await fetch('./data/rpls_villejuif.csv');
-    if (!res.ok) throw new Error("Fichier data/rpls_villejuif.json introuvable");
-    const csvText = await res.text();
+function processRPLS(data) {
+  hlmByBV.clear(); // On vide les anciennes données
+  let totalLogementsCommune = 0;
 
-    // 2. On transforme ton CSV en format utilisable (JSON)
-    const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(';');
-    const features = lines.slice(1).map(line => {
-      const data = line.split(';');
-      let props = {};
-      headers.forEach((header, i) => {
-        // Nettoyage des noms de colonnes et valeurs
-        const key = header.trim();
-        let val = data[i] ? data[i].trim() : "";
-        // Conversion des nombres (remplace la virgule par un point)
-        if (val.includes(',')) val = val.replace(',', '.');
-        props[key] = isNaN(val) ? val : parseFloat(val);
-      });
+  // 1. On parcourt les données que tu as extraites du CSV
+  data.features.forEach(f => {
+    const irisId = f.properties.id_iris;
+    const nbLogements = f.properties.nb_ls;
+    totalLogementsCommune += nbLogements;
+
+    // On stocke temporairement par IRIS
+    hlmByBV.set(String(irisId), { count: nbLogements, loyer: f.properties.moy_loy });
+  });
+
+  // 2. Liaison avec les Bureaux de Vote (BV)
+  // On regarde dans ton fichier geo.json quel bureau appartient à quel IRIS
+  if (GEO) {
+    GEO.features.forEach(feat => {
+      const idBV = String(feat.properties.id_bv);
+      const codeIrisBV = String(feat.properties.code_iris); // Vérifie que cette colonne existe dans geo.json
       
-      // On recrée une structure que ton application comprend
-      return {
-        type: "Feature",
-        properties: {
-          id_iris: props.CodGeo,
-          nb_ls: props.nbLsPls || 0,
-          moy_loy: props.moyLoy || 0,
-          libcom: props.LibCom
-        },
-        geometry: null // La géométrie sera liée via geo.json par ton code
-      };
+      const statsIris = hlmByBV.get(codeIrisBV);
+      if (statsIris) {
+        // On ré-assigne la donnée au Bureau de Vote pour que tes graphiques fonctionnent
+        hlmByBV.set(idBV, { 
+          count: statsIris.count, 
+          pct: (statsIris.count / totalLogementsCommune) * 100,
+          loyer: statsIris.loyer 
+        });
+      }
     });
-
-    // 3. On envoie les données à la fonction qui gère l'affichage
-    processRPLS({ type: "FeatureCollection", features: features });
-
-  } catch(e) {
-    console.warn('Erreur RPLS local :', e.message);
-    document.getElementById('lt').textContent = 'RPLS non disponible';
-    hlmLoaded = true;
   }
+
+  hlmLoaded = true;
+  hlmTotalLogements = totalLogementsCommune;
+  
+  // On force la mise à jour de l'affichage
+  if (typeof updateMapDisplay === "function") updateMapDisplay();
+  if (typeof updateHLMLegend === "function") updateHLMLegend();
+  
+  console.log(`RPLS 2024 chargé : ${totalLogementsCommune} logements sociaux sur Villejuif.`);
 }
 
 // Convertit un CSV RPLS (colonnes lon/lat ou x/y) en GeoJSON FeatureCollection
