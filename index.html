@@ -287,6 +287,7 @@ let hlmByBV   = new Map();
 let hlmByIris = new Map();
 let hlmLoaded = false;
 let hlmTotalLogements = 0; // total logements dans la commune (pour le %)
+let hlmDistributionMode = 'none'; // iris | fallback_uniform | none
 
 // Couleur RPLS
 const HLM_COLOR = '#f48fb1';
@@ -410,6 +411,8 @@ function processRPLS(data) {
 
     hlmLoaded = true;
     hlmTotalLogements = totalLogementsCommune;
+    aggregateHLMbyBV();
+    hlmLoaded = true;
     
     // Mise à jour de l'interface
     if (typeof updateColors === "function") updateColors();
@@ -517,6 +520,7 @@ function updateHLMLegend() {
 
 // ── Corrélations HLM ─────────────────────────────────────────────────────────
 function buildHLMCorrBlock() {
+  if (hlmDistributionMode === 'fallback_uniform') return '';
   if (!hlmLoaded || hlmByBV.size === 0 || !CUR_DATA || CUR_DATA.length === 0) return '';
   const keys = CUR_DATA;
   const hlmX = keys.map(r => hlmPctForBV(r.bv));
@@ -773,7 +777,7 @@ function openCP(nuance){
     body+=`</div>`;
   }
   // Corrélation HLM pour ce candidat
-  if(hlmLoaded && hlmByBV.size > 0){
+  if(hlmLoaded && hlmByBV.size > 0 && hlmDistributionMode === 'iris'){
     const hlmX=keys.map(r=>hlmPctForBV(r.bv));
     const candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0);
     const rv=pearson(hlmX,candY);
@@ -949,6 +953,9 @@ function renderCorr(){
   else if (hlmLoaded && hlmByBV.size === 0) {
     html += `<div class="cst" style="color:${HLM_COLOR}">Logements sociaux</div>
     <div style="font-size:10px;color:var(--tm);padding:6px 0">Données RPLS non disponibles pour cette commune.</div>`;
+  } else if (hlmLoaded && hlmDistributionMode === 'fallback_uniform') {
+    html += `<div class="cst" style="color:${HLM_COLOR}">Logements sociaux</div>
+    <div style="font-size:10px;color:var(--tm);padding:6px 0">Corrélation HLM désactivée : répartition uniforme (estimation) faute de lien IRIS ↔ BV.</div>`;
   }
 
   html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;
@@ -1088,7 +1095,7 @@ async function init(){
   // Charge RPLS en parallèle (non-bloquant)
   loadRPLS().then(()=>{
     // Re-agrège une fois le GEO disponible
-    if(GEO && hlmPoints.length > 0) aggregateHLMbyBV();
+    if(GEO && hlmByIris.size > 0) aggregateHLMbyBV();
     renderBVGrid(); // Rafraîchit les badges HLM
     updateHLMLegend();
     if(mode==='hlm') updateColors();
