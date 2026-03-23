@@ -349,70 +349,35 @@ function parseDelimited(text) {
 
 function aggregateHLMbyBV() {
   hlmByBV.clear();
-  hlmDistributionMode = 'none';
-  if (!GEO || !GEO.features || !GEO.features.length || hlmByIris.size === 0 || hlmTotalLogements <= 0) return;
+  if (!GEO || !GEO.features || !GEO.features.length || hlmByIris.size === 0) return;
 
   // Mapping prioritaire : geo.json contient un code IRIS par BV.
   const hasIrisMapping = GEO.features.some(f => f?.properties?.code_iris);
-  if (hasIrisMapping) {
-    GEO.features.forEach(feat => {
-      const idBV = String(feat.properties.id_bv);
-      const codeIrisBV = String(feat.properties.code_iris || '');
-      const statsIris = hlmByIris.get(codeIrisBV);
-      if (statsIris) {
-        hlmByBV.set(idBV, {
-          count: statsIris.count,
-          pct: hlmTotalLogements > 0 ? (statsIris.count / hlmTotalLogements) * 100 : 0,
-          loyer: statsIris.loyer
-        });
-      }
-    });
-    if (hlmByBV.size > 0) hlmDistributionMode = 'iris';
+  if (!hasIrisMapping) {
+    console.info('RPLS: geo.json ne contient pas de correspondance code_iris par BV.');
     return;
   }
 
-  // Fallback : si aucun lien IRIS -> BV dans geo.json, on répartit la somme
-  // communale uniformément pour garder un affichage fonctionnel.
-  const bvIds = GEO.features
-    .map(f => String(f?.properties?.id_bv ?? ''))
-    .filter(Boolean);
-  if (!bvIds.length) return;
-  const base = Math.floor(hlmTotalLogements / bvIds.length);
-  let remainder = hlmTotalLogements - (base * bvIds.length);
-  bvIds.forEach(idBV => {
-    const count = base + (remainder > 0 ? 1 : 0);
-    if (remainder > 0) remainder -= 1;
-    hlmByBV.set(idBV, {
-      count,
-      pct: hlmTotalLogements > 0 ? (count / hlmTotalLogements) * 100 : 0,
-      loyer: 0
-    });
+  GEO.features.forEach(feat => {
+    const idBV = String(feat.properties.id_bv);
+    const codeIrisBV = String(feat.properties.code_iris || '');
+    const statsIris = hlmByIris.get(codeIrisBV);
+    if (statsIris) {
+      hlmByBV.set(idBV, {
+        count: statsIris.count,
+        pct: hlmTotalLogements > 0 ? (statsIris.count / hlmTotalLogements) * 100 : 0,
+        loyer: statsIris.loyer
+      });
+    }
   });
-  hlmDistributionMode = 'fallback_uniform';
-  console.info('RPLS: fallback uniforme appliqué (pas de correspondance code_iris dans geo.json).');
 }
 
 async function loadRPLS() {
-  const sources = [
-    { url: `${RPLS_DATA_URL}?v=${Date.now()}`, label: 'data.gouv.fr API' },
-    { url: `${DATA_BASE}rpls_villejuif.csv?v=${Date.now()}`, label: 'local fallback' }
-  ];
   try {
-    let lastError = null;
-    for (const src of sources) {
-      try {
-        const res = await fetch(src.url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const rows = parseDelimited(await res.text());
-        processRPLS(rows);
-        console.log(`RPLS chargé depuis ${src.label}.`);
-        return;
-      } catch (e) {
-        lastError = e;
-        console.warn(`RPLS source indisponible (${src.label}):`, e);
-      }
-    }
-    throw lastError || new Error('Aucune source RPLS disponible');
+    const res = await fetch(`${DATA_BASE}rpls_villejuif.csv?v=` + Date.now());
+    if (!res.ok) throw new Error('rpls_villejuif.csv introuvable');
+    const rows = parseDelimited(await res.text());
+    processRPLS(rows);
   } catch (e) {
     console.warn('RPLS load failed:', e);
     hlmLoaded = false;
@@ -425,7 +390,6 @@ async function loadRPLS() {
 function processRPLS(data) {
     hlmByBV.clear();
     hlmByIris.clear();
-    hlmDistributionMode = 'none';
     let totalLogementsCommune = 0;
 
     (data || []).forEach(row => {
@@ -444,6 +408,9 @@ function processRPLS(data) {
         });
     });
 
+    aggregateHLMbyBV();
+
+    hlmLoaded = true;
     hlmTotalLogements = totalLogementsCommune;
     aggregateHLMbyBV();
     hlmLoaded = true;
@@ -546,12 +513,9 @@ function updateHLMLegend() {
   const nbBV = hlmByBV.size;
   const maxBV = [...hlmByBV.values()].reduce((m, v) => Math.max(m, v.count), 0);
   const detail = nbBV > 0
-    ? (hlmDistributionMode === 'fallback_uniform'
-      ? `<strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
-        <span style="color:var(--tm)">Répartition uniforme (estimation) : pas de liaison IRIS ↔ BV dans geo.json</span>`
-      : `<strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
-        max : <strong style="color:${HLM_COLOR}">${fN(maxBV)}</strong> lgts dans un BV`)
-    : `<span style="color:var(--tm)">Données RPLS non réparties par bureau.</span>`;
+    ? `<strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
+    max : <strong style="color:${HLM_COLOR}">${fN(maxBV)}</strong> lgts dans un BV`
+    : `<span style="color:var(--tm)">Pas de liaison IRIS ↔ BV dans geo.json (total commune uniquement)</span>`;
   el.innerHTML = `<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br>${detail}`;
 }
 
