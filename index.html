@@ -332,42 +332,47 @@ function pointInFeature(point, feature) {
 // ── Chargement RPLS ───────────────────────────────────────────────────────────
 async function loadRPLS() {
   try {
-    document.getElementById('lt').textContent = 'Chargement logements sociaux…';
-    // Récupère le ZIP sans paramètre de version (fonctionne sans)
-    const res = await fetch(`https://urbi-explore.fr/get_rpls?com=${COM_INSEE}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const buf = await res.arrayBuffer();
-    const zip = await JSZip.loadAsync(buf);
+    document.getElementById('lt').textContent = 'Chargement logements sociaux (Local 2024)…';
+    
+    // 1. On récupère ton fichier local
+    const res = await fetch('data/rpls_villejuif.json');
+    if (!res.ok) throw new Error("Fichier data/rpls_villejuif.json introuvable");
+    const csvText = await res.text();
 
-    // Cherche un fichier JSON/GeoJSON dans le ZIP
-    let geojsonData = null;
-    const names = Object.keys(zip.files);
+    // 2. On transforme ton CSV en format utilisable (JSON)
+    const lines = csvText.trim().split('\n');
+    const headers = lines[0].split(';');
+    const features = lines.slice(1).map(line => {
+      const data = line.split(';');
+      let props = {};
+      headers.forEach((header, i) => {
+        // Nettoyage des noms de colonnes et valeurs
+        const key = header.trim();
+        let val = data[i] ? data[i].trim() : "";
+        // Conversion des nombres (remplace la virgule par un point)
+        if (val.includes(',')) val = val.replace(',', '.');
+        props[key] = isNaN(val) ? val : parseFloat(val);
+      });
+      
+      // On recrée une structure que ton application comprend
+      return {
+        type: "Feature",
+        properties: {
+          id_iris: props.CodGeo,
+          nb_ls: props.nbLsPls || 0,
+          moy_loy: props.moyLoy || 0,
+          libcom: props.LibCom
+        },
+        geometry: null // La géométrie sera liée via geo.json par ton code
+      };
+    });
 
-    for (const name of names) {
-      const lc = name.toLowerCase();
-      if (lc.endsWith('.geojson') || lc.endsWith('.json')) {
-        const txt = await zip.files[name].async('string');
-        try { geojsonData = JSON.parse(txt); break; } catch(e) { /* continue */ }
-      }
-    }
+    // 3. On envoie les données à la fonction qui gère l'affichage
+    processRPLS({ type: "FeatureCollection", features: features });
 
-    // Si pas de GeoJSON, cherche un CSV
-    if (!geojsonData) {
-      for (const name of names) {
-        if (name.toLowerCase().endsWith('.csv')) {
-          const txt = await zip.files[name].async('string');
-          geojsonData = csvRPLStoGeoJSON(txt);
-          break;
-        }
-      }
-    }
-
-    if (!geojsonData) throw new Error('Aucun fichier exploitable dans le ZIP');
-
-    processRPLS(geojsonData);
   } catch(e) {
-    console.warn('RPLS indisponible :', e.message);
-    // Mode dégradé : on continue sans les données HLM
+    console.warn('Erreur RPLS local :', e.message);
+    document.getElementById('lt').textContent = 'RPLS non disponible';
     hlmLoaded = true;
   }
 }
