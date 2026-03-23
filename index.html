@@ -364,14 +364,18 @@ const cname=n=>(cand(n)||{nom:n}).nom;
 const lieauOf=k=>{const f=GEO&&GEO.features.find(f=>f.properties.id_bv===String(k));return f?f.properties.lieu:'';};
 
 function parseCSV(text){
+  const FIXED_COLS=new Set(['bv','lieu','ins','vot','exp','bl','nu']);
+  const INT_COLS=new Set(['ins','vot','exp','bl','nu']);
   const lines=text.trim().split('\n').filter(l=>!l.startsWith('#')&&l.trim());
   const headers=lines[0].split(',').map(h=>h.trim());
+  // Colonnes candidats = tout ce qui n'est pas une colonne fixe connue
+  const candCols=headers.filter(h=>!FIXED_COLS.has(h));
   return lines.slice(1).map(l=>{
     const vals=l.split(',');
     const obj={};
     headers.forEach((h,i)=>obj[h]=vals[i]?vals[i].trim():'0');
-    ['ins','vot','exp','bl','nu'].forEach(k=>obj[k]=parseInt(obj[k])||0);
-    headers.slice(5).forEach(h=>obj[h]=parseInt(obj[h])||0);
+    INT_COLS.forEach(k=>{if(obj[k]!==undefined)obj[k]=parseInt(obj[k])||0;});
+    candCols.forEach(h=>obj[h]=parseInt(obj[h])||0);
     return obj;
   });
 }
