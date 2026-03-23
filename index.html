@@ -335,7 +335,7 @@ async function loadRPLS() {
     document.getElementById('lt').textContent = 'Chargement logements sociaux (Local 2024)…';
     
     // 1. On récupère ton fichier local
-    const res = await fetch('data/rpls_villejuif.json');
+    const res = await fetch('./data/rpls_villejuif.csv');
     if (!res.ok) throw new Error("Fichier data/rpls_villejuif.json introuvable");
     const csvText = await res.text();
 
