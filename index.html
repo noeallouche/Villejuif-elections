@@ -272,6 +272,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const DATA_BASE='./data/';
+const RPLS_DATA_URL='https://www.data.gouv.fr/api/1/datasets/r/7649e51e-9418-4173-9dc6-cefb94bbd7c0';
 // Code INSEE de la commune (Villejuif = 94076)
 const COM_INSEE='94076';
 
@@ -284,8 +285,10 @@ let map,popup,hovId=null,panelHovId=null;
 // hlmByBV   : Map<bv_key_string, {count:N, pct:N}>  (agrégé par bureau)
 let hlmPoints = [];
 let hlmByBV   = new Map();
+let hlmByIris = new Map();
 let hlmLoaded = false;
 let hlmTotalLogements = 0; // total logements dans la commune (pour le %)
+let hlmDistributionMode = 'none'; // iris | fallback_uniform | none
 
 // Couleur RPLS
 const HLM_COLOR = '#f48fb1';
@@ -331,51 +334,119 @@ function pointInFeature(point, feature) {
 
 // ── Chargement RPLS ───────────────────────────────────────────────────────────
 
+function parseDelimited(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const sep = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(sep);
+    const row = {};
+    headers.forEach((h, i) => row[h] = (vals[i] || '').trim());
+    return row;
+  });
+}
+
+function aggregateHLMbyBV() {
+  hlmByBV.clear();
+  hlmDistributionMode = 'none';
+  if (!GEO || !GEO.features || !GEO.features.length || hlmByIris.size === 0 || hlmTotalLogements <= 0) return;
+
+  // Mapping prioritaire : geo.json contient un code IRIS par BV.
+  const hasIrisMapping = GEO.features.some(f => f?.properties?.code_iris);
+  if (hasIrisMapping) {
+    GEO.features.forEach(feat => {
+      const idBV = String(feat.properties.id_bv);
+      const codeIrisBV = String(feat.properties.code_iris || '');
+      const statsIris = hlmByIris.get(codeIrisBV);
+      if (statsIris) {
+        hlmByBV.set(idBV, {
+          count: statsIris.count,
+          pct: hlmTotalLogements > 0 ? (statsIris.count / hlmTotalLogements) * 100 : 0,
+          loyer: statsIris.loyer
+        });
+      }
+    });
+    if (hlmByBV.size > 0) hlmDistributionMode = 'iris';
+    return;
+  }
+
+  // Fallback : si aucun lien IRIS -> BV dans geo.json, on répartit la somme
+  // communale uniformément pour garder un affichage fonctionnel.
+  const bvIds = GEO.features
+    .map(f => String(f?.properties?.id_bv ?? ''))
+    .filter(Boolean);
+  if (!bvIds.length) return;
+  const base = Math.floor(hlmTotalLogements / bvIds.length);
+  let remainder = hlmTotalLogements - (base * bvIds.length);
+  bvIds.forEach(idBV => {
+    const count = base + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    hlmByBV.set(idBV, {
+      count,
+      pct: hlmTotalLogements > 0 ? (count / hlmTotalLogements) * 100 : 0,
+      loyer: 0
+    });
+  });
+  hlmDistributionMode = 'fallback_uniform';
+  console.info('RPLS: fallback uniforme appliqué (pas de correspondance code_iris dans geo.json).');
+}
+
+async function loadRPLS() {
+  const sources = [
+    { url: `${RPLS_DATA_URL}?v=${Date.now()}`, label: 'data.gouv.fr API' },
+    { url: `${DATA_BASE}rpls_villejuif.csv?v=${Date.now()}`, label: 'local fallback' }
+  ];
+  try {
+    let lastError = null;
+    for (const src of sources) {
+      try {
+        const res = await fetch(src.url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rows = parseDelimited(await res.text());
+        processRPLS(rows);
+        console.log(`RPLS chargé depuis ${src.label}.`);
+        return;
+      } catch (e) {
+        lastError = e;
+        console.warn(`RPLS source indisponible (${src.label}):`, e);
+      }
+    }
+    throw lastError || new Error('Aucune source RPLS disponible');
+  } catch (e) {
+    console.warn('RPLS load failed:', e);
+    hlmLoaded = false;
+  }
+}
+
 /**
  * Traite les données RPLS 2024 basées sur les codes IRIS.
- * Cette fonction lie les statistiques sociales aux Bureaux de Vote (BV).
  */
 function processRPLS(data) {
-    hlmByBV.clear(); 
+    hlmByBV.clear();
+    hlmByIris.clear();
+    hlmDistributionMode = 'none';
     let totalLogementsCommune = 0;
-    let features = data.features || [];
 
-    // 1. On parcourt les données extraites du CSV (IRIS)
-    features.forEach(f => {
-        const irisId = f.properties.id_iris;
-        const nbLogements = parseInt(f.properties.nb_ls) || 0;
-        const moyLoyer = parseFloat(f.properties.moy_loy) || 0;
-        
+    (data || []).forEach(row => {
+        const irisId = String(row.CodGeo || '');
+        const nbPLS = parseInt(row.nbLsPls) || 0;
+        const nbMES = parseInt(row.nbLsMes) || 0;
+        const nbLogements = nbPLS + nbMES;
+        const moyLoyer = parseFloat(row.moyLoy) || 0;
+        if (!irisId || !irisId.startsWith(COM_INSEE)) return;
+
         totalLogementsCommune += nbLogements;
 
-        // On stocke temporairement par code IRIS
-        hlmByBV.set(String(irisId), { 
+        hlmByIris.set(irisId, {
             count: nbLogements, 
             loyer: moyLoyer 
         });
     });
 
-    // 2. Liaison avec les Bureaux de Vote (BV) via le fichier geo.json
-    if (GEO) {
-        GEO.features.forEach(feat => {
-            const idBV = String(feat.properties.id_bv);
-            // On récupère le code IRIS associé à ce bureau de vote dans le geo.json
-            const codeIrisBV = String(feat.properties.code_iris); 
-            
-            const statsIris = hlmByBV.get(codeIrisBV);
-            if (statsIris) {
-                // On ré-assigne la donnée au Bureau de Vote pour les graphiques et la carte
-                hlmByBV.set(idBV, { 
-                    count: statsIris.count, 
-                    pct: totalLogementsCommune > 0 ? (statsIris.count / totalLogementsCommune) * 100 : 0,
-                    loyer: statsIris.loyer 
-                });
-            }
-        });
-    }
-
-    hlmLoaded = true;
     hlmTotalLogements = totalLogementsCommune;
+    aggregateHLMbyBV();
+    hlmLoaded = true;
     
     // Mise à jour de l'interface
     if (typeof updateColors === "function") updateColors();
@@ -474,13 +545,19 @@ function updateHLMLegend() {
   if (!el) return;
   const nbBV = hlmByBV.size;
   const maxBV = [...hlmByBV.values()].reduce((m, v) => Math.max(m, v.count), 0);
-  el.innerHTML = `<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br>
-    <strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
-    max : <strong style="color:${HLM_COLOR}">${fN(maxBV)}</strong> lgts dans un BV`;
+  const detail = nbBV > 0
+    ? (hlmDistributionMode === 'fallback_uniform'
+      ? `<strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
+        <span style="color:var(--tm)">Répartition uniforme (estimation) : pas de liaison IRIS ↔ BV dans geo.json</span>`
+      : `<strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
+        max : <strong style="color:${HLM_COLOR}">${fN(maxBV)}</strong> lgts dans un BV`)
+    : `<span style="color:var(--tm)">Données RPLS non réparties par bureau.</span>`;
+  el.innerHTML = `<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br>${detail}`;
 }
 
 // ── Corrélations HLM ─────────────────────────────────────────────────────────
 function buildHLMCorrBlock() {
+  if (hlmDistributionMode === 'fallback_uniform') return '';
   if (!hlmLoaded || hlmByBV.size === 0 || !CUR_DATA || CUR_DATA.length === 0) return '';
   const keys = CUR_DATA;
   const hlmX = keys.map(r => hlmPctForBV(r.bv));
@@ -737,7 +814,7 @@ function openCP(nuance){
     body+=`</div>`;
   }
   // Corrélation HLM pour ce candidat
-  if(hlmLoaded && hlmByBV.size > 0){
+  if(hlmLoaded && hlmByBV.size > 0 && hlmDistributionMode === 'iris'){
     const hlmX=keys.map(r=>hlmPctForBV(r.bv));
     const candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0);
     const rv=pearson(hlmX,candY);
@@ -913,6 +990,9 @@ function renderCorr(){
   else if (hlmLoaded && hlmByBV.size === 0) {
     html += `<div class="cst" style="color:${HLM_COLOR}">Logements sociaux</div>
     <div style="font-size:10px;color:var(--tm);padding:6px 0">Données RPLS non disponibles pour cette commune.</div>`;
+  } else if (hlmLoaded && hlmDistributionMode === 'fallback_uniform') {
+    html += `<div class="cst" style="color:${HLM_COLOR}">Logements sociaux</div>
+    <div style="font-size:10px;color:var(--tm);padding:6px 0">Corrélation HLM désactivée : répartition uniforme (estimation) faute de lien IRIS ↔ BV.</div>`;
   }
 
   html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;
@@ -1052,7 +1132,7 @@ async function init(){
   // Charge RPLS en parallèle (non-bloquant)
   loadRPLS().then(()=>{
     // Re-agrège une fois le GEO disponible
-    if(GEO && hlmPoints.length > 0) aggregateHLMbyBV();
+    if(GEO && hlmByIris.size > 0) aggregateHLMbyBV();
     renderBVGrid(); // Rafraîchit les badges HLM
     updateHLMLegend();
     if(mode==='hlm') updateColors();
