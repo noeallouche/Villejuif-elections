@@ -330,163 +330,69 @@ function pointInFeature(point, feature) {
 }
 
 // ── Chargement RPLS ───────────────────────────────────────────────────────────
+
+/**
+ * Traite les données RPLS 2024 basées sur les codes IRIS.
+ * Cette fonction lie les statistiques sociales aux Bureaux de Vote (BV).
+ */
 function processRPLS(data) {
-  hlmByBV.clear(); // On vide les anciennes données
-  let totalLogementsCommune = 0;
+    hlmByBV.clear(); 
+    let totalLogementsCommune = 0;
+    let features = data.features || [];
 
-  // 1. On parcourt les données que tu as extraites du CSV
-  data.features.forEach(f => {
-    const irisId = f.properties.id_iris;
-    const nbLogements = f.properties.nb_ls;
-    totalLogementsCommune += nbLogements;
+    // 1. On parcourt les données extraites du CSV (IRIS)
+    features.forEach(f => {
+        const irisId = f.properties.id_iris;
+        const nbLogements = parseInt(f.properties.nb_ls) || 0;
+        const moyLoyer = parseFloat(f.properties.moy_loy) || 0;
+        
+        totalLogementsCommune += nbLogements;
 
-    // On stocke temporairement par IRIS
-    hlmByBV.set(String(irisId), { count: nbLogements, loyer: f.properties.moy_loy });
-  });
-
-  // 2. Liaison avec les Bureaux de Vote (BV)
-  // On regarde dans ton fichier geo.json quel bureau appartient à quel IRIS
-  if (GEO) {
-    GEO.features.forEach(feat => {
-      const idBV = String(feat.properties.id_bv);
-      const codeIrisBV = String(feat.properties.code_iris); // Vérifie que cette colonne existe dans geo.json
-      
-      const statsIris = hlmByBV.get(codeIrisBV);
-      if (statsIris) {
-        // On ré-assigne la donnée au Bureau de Vote pour que tes graphiques fonctionnent
-        hlmByBV.set(idBV, { 
-          count: statsIris.count, 
-          pct: (statsIris.count / totalLogementsCommune) * 100,
-          loyer: statsIris.loyer 
+        // On stocke temporairement par code IRIS
+        hlmByBV.set(String(irisId), { 
+            count: nbLogements, 
+            loyer: moyLoyer 
         });
-      }
     });
-  }
 
-  hlmLoaded = true;
-  hlmTotalLogements = totalLogementsCommune;
-  
-  // On force la mise à jour de l'affichage
-  if (typeof updateMapDisplay === "function") updateMapDisplay();
-  if (typeof updateHLMLegend === "function") updateHLMLegend();
-  
-  console.log(`RPLS 2024 chargé : ${totalLogementsCommune} logements sociaux sur Villejuif.`);
-}
-
-// Convertit un CSV RPLS (colonnes lon/lat ou x/y) en GeoJSON FeatureCollection
-function csvRPLStoGeoJSON(text) {
-  const lines = text.trim().split('\n');
-  const sep = lines[0].includes(';') ? ';' : ',';
-  const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
-
-  // Détecte les colonnes géo
-  const lonCol = headers.findIndex(h => /^(lon|lng|longitude|x)$/.test(h));
-  const latCol = headers.findIndex(h => /^(lat|latitude|y)$/.test(h));
-  if (lonCol < 0 || latCol < 0) return null;
-
-  // Colonne nb logements
-  const nbCol = headers.findIndex(h => /nb_log|nblgt|nb_lgt|nb_logt|logements|nb_hlm/.test(h));
-  // Colonne type financement
-  const typeCol = headers.findIndex(h => /type|finance|financement|nature/.test(h));
-
-  const features = [];
-  for (let i = 1; i < lines.length; i++) {
-    const row = lines[i].split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
-    const lng = parseFloat(row[lonCol]);
-    const lat = parseFloat(row[latCol]);
-    if (isNaN(lng) || isNaN(lat)) continue;
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [lng, lat] },
-      properties: {
-        nb: nbCol >= 0 ? (parseInt(row[nbCol]) || 1) : 1,
-        type: typeCol >= 0 ? row[typeCol] : 'HLM',
-      }
-    });
-  }
-  return { type: 'FeatureCollection', features };
-}
-
-// Traite le GeoJSON RPLS : extrait les points et agrège par BV
-function processRPLS(data) {
-  hlmPoints = [];
-  let features = [];
-
-  if (data.type === 'FeatureCollection') {
-    features = data.features || [];
-  } else if (data.type === 'Feature') {
-    features = [data];
-  } else if (Array.isArray(data)) {
-    features = data;
-  }
-
-  // Normalise : on veut des points avec nb logements
-  features.forEach(f => {
-    if (!f.geometry) return;
-    let pts = [];
-    if (f.geometry.type === 'Point') {
-      pts = [f.geometry.coordinates];
-    } else if (f.geometry.type === 'MultiPoint') {
-      pts = f.geometry.coordinates;
+    // 2. Liaison avec les Bureaux de Vote (BV) via le fichier geo.json
+    if (GEO) {
+        GEO.features.forEach(feat => {
+            const idBV = String(feat.properties.id_bv);
+            // On récupère le code IRIS associé à ce bureau de vote dans le geo.json
+            const codeIrisBV = String(feat.properties.code_iris); 
+            
+            const statsIris = hlmByBV.get(codeIrisBV);
+            if (statsIris) {
+                // On ré-assigne la donnée au Bureau de Vote pour les graphiques et la carte
+                hlmByBV.set(idBV, { 
+                    count: statsIris.count, 
+                    pct: totalLogementsCommune > 0 ? (statsIris.count / totalLogementsCommune) * 100 : 0,
+                    loyer: statsIris.loyer 
+                });
+            }
+        });
     }
-    pts.forEach(coord => {
-      if (!coord || coord.length < 2) return;
-      const nb = f.properties
-        ? (parseInt(f.properties.nb_log || f.properties.nb || f.properties.nblgt || f.properties.nb_lgt || 1))
-        : 1;
-      hlmPoints.push({
-        lng: coord[0], lat: coord[1],
-        nb: isNaN(nb) ? 1 : nb,
-        type: f.properties ? (f.properties.type || f.properties.financement || 'HLM') : 'HLM',
-      });
-    });
-  });
 
-  hlmTotalLogements = hlmPoints.reduce((s, p) => s + p.nb, 0);
-
-  // Agrégation par bureau de vote via jointure spatiale
-  if (GEO && hlmPoints.length > 0) {
-    aggregateHLMbyBV();
-  }
-
-  hlmLoaded = true;
-  addHLMLayer();
-  updateHLMLegend();
-  console.log(`RPLS : ${hlmPoints.length} immeubles, ${hlmTotalLogements} logements`);
-}
-
-function aggregateHLMbyBV() {
-  hlmByBV.clear();
-  if (!GEO) return;
-
-  // Compte les logements dans chaque BV
-  GEO.features.forEach(feat => {
-    const key = String(feat.properties.id_bv);
-    let count = 0;
-    hlmPoints.forEach(pt => {
-      if (pointInFeature([pt.lng, pt.lat], feat)) {
-        count += pt.nb;
-      }
-    });
-    hlmByBV.set(key, { count });
-  });
-
-  // Calcule le % par rapport au total de la commune
-  hlmByBV.forEach((val, key) => {
-    val.pct = hlmTotalLogements > 0 ? val.count / hlmTotalLogements * 100 : 0;
-  });
+    hlmLoaded = true;
+    hlmTotalLogements = totalLogementsCommune;
+    
+    // Mise à jour de l'interface
+    if (typeof updateColors === "function") updateColors();
+    if (typeof updateHLMLegend === "function") updateHLMLegend();
+    
+    console.log(`RPLS 2024 chargé : ${totalLogementsCommune} logements sociaux sur Villejuif.`);
 }
 
 // Renvoie les stats HLM pour un BV (ou null)
 function hlmForBV(key) {
-  return hlmByBV.get(String(key)) || null;
+    return hlmByBV.get(String(key)) || null;
 }
 
-// Renvoie le taux HLM (% exprimés dans le BV) pour les corrélations
-// On l'exprime en % des logements sociaux de la commune situés dans ce BV
+// Renvoie le taux HLM (% de la commune) pour les corrélations
 function hlmPctForBV(key) {
-  const h = hlmForBV(key);
-  return h ? h.pct : 0;
+    const h = hlmForBV(key);
+    return h ? h.pct : 0;
 }
 
 // ── Couche HLM sur la carte ───────────────────────────────────────────────────
