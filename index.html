@@ -130,10 +130,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 #bvd.vis{display:block;transform:translateX(0)}
 .dcl{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:11px;color:rgba(255,255,255,.5);font-family:inherit;transition:all .2s;font-weight:500}
 .dcl:hover{background:var(--acl);color:var(--ac);border-color:var(--ac)}
-#leg,#pleg,#cleg{position:fixed;bottom:36px;left:14px;z-index:10;background:rgba(22,23,27,.94);backdrop-filter:blur(12px);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+#leg,#pleg,#cleg,#hleg{position:fixed;bottom:36px;left:14px;z-index:10;background:rgba(22,23,27,.94);backdrop-filter:blur(12px);border:1px solid var(--bd);border-radius:var(--r);padding:11px 13px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 #leg{min-width:190px;max-height:280px;overflow-y:auto}
-#pleg,#cleg{display:none}
-#leg h4,#pleg h4,#cleg h4{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:8px}
+#pleg,#cleg,#hleg{display:none}
+#leg h4,#pleg h4,#cleg h4,#hleg h4{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:8px}
 .li{display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;color:var(--ts)}
 .ls{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .lc{font-size:10px;color:var(--tm);margin-left:auto}
@@ -152,6 +152,10 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .sp{width:34px;height:34px;border:1.5px solid rgba(255,255,255,.07);border-top-color:var(--ac);border-radius:50%;animation:rot 1s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 .st{margin-top:16px;font-size:11px;color:rgba(255,255,255,.3)}
+
+/* ── HLM badge dans les tooltips ── */
+.tt-hlm{display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.12);border:1px solid rgba(244,143,177,.25);border-radius:3px;padding:2px 6px;font-size:10px;color:#f48fb1;font-weight:600;margin-top:4px}
+
 @media(max-width:900px){
   :root{--panel:0px;--nav:80px}
   #map{right:0;bottom:0}
@@ -159,7 +163,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
   #panel{top:auto;bottom:0;left:0;width:100%;max-height:40vh;border-top:1px solid var(--bd);border-left:none;border-radius:16px 16px 0 0;background:rgba(22,23,27,.97);backdrop-filter:blur(12px)}
   #bvd{width:100%;top:auto;bottom:0;height:68vh;border-radius:16px 16px 0 0}
   #ft{display:none}
-  #leg,#pleg,#cleg{bottom:auto;top:calc(var(--nav)+8px);left:8px;padding:7px 10px}
+  #leg,#pleg,#cleg,#hleg{bottom:auto;top:calc(var(--nav)+8px);left:8px;padding:7px 10px}
 }
 </style>
 </head>
@@ -181,6 +185,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
     <button class="mbtn"        data-mode="participation" onclick="setMode('participation')">Participation</button>
     <button class="mbtn"        data-mode="gd"            onclick="setMode('gd')">Ratio G/D</button>
     <button class="mbtn"        data-mode="frag"          onclick="setMode('frag')">Fragmentation</button>
+    <button class="mbtn"        data-mode="hlm"           onclick="setMode('hlm')">Log. sociaux</button>
   </div>
 </nav>
 
@@ -188,6 +193,19 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 <div id="leg"></div>
 <div id="pleg"><h4 id="pl-t">Participation</h4><div class="gb" id="pl-g"></div><div class="gl" id="pl-l"></div></div>
 <div id="cleg"><h4 id="cl-t">Score</h4><div class="gb" id="cl-g"></div><div class="gl" id="cl-l"></div></div>
+<div id="hleg">
+  <h4>Logements sociaux</h4>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <svg width="60" height="18" viewBox="0 0 60 18">
+      <circle cx="5"  cy="9" r="3"  fill="#f48fb1" opacity=".85"/>
+      <circle cx="20" cy="9" r="5"  fill="#f48fb1" opacity=".85"/>
+      <circle cx="40" cy="9" r="7"  fill="#f48fb1" opacity=".85"/>
+      <circle cx="57" cy="9" r="9"  fill="#f48fb1" opacity=".85"/>
+    </svg>
+    <span style="font-size:9px;color:var(--tm)">taille ∝ nb logements</span>
+  </div>
+  <div id="hleg-stats" style="font-size:10px;color:var(--ts);line-height:1.6"></div>
+</div>
 
 <div id="panel">
   <div id="tabs">
@@ -250,11 +268,27 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 <div id="ft"></div>
 
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<!-- JSZip pour lire le ZIP RPLS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const DATA_BASE='./data/';
+// Code INSEE de la commune (Villejuif = 94076)
+const COM_INSEE='94076';
+
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
 let mode='winner',excl=new Set(),curCand=null;
 let map,popup,hovId=null,panelHovId=null;
+
+// ── RPLS ──────────────────────────────────────────────────────────────────────
+// hlmPoints : tableau de features GeoJSON {geometry:{type:'Point',coordinates:[lng,lat]}, properties:{nb:N, type:'HLM'}}
+// hlmByBV   : Map<bv_key_string, {count:N, pct:N}>  (agrégé par bureau)
+let hlmPoints = [];
+let hlmByBV   = new Map();
+let hlmLoaded = false;
+let hlmTotalLogements = 0; // total logements dans la commune (pour le %)
+
+// Couleur RPLS
+const HLM_COLOR = '#f48fb1';
 
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
 const fN=v=>v.toLocaleString('fr-FR');
@@ -270,6 +304,323 @@ const ccolor=n=>(cand(n)||{color:'#78909C'}).color;
 const cname=n=>(cand(n)||{nom:n}).nom;
 const lieauOf=k=>{const f=GEO&&GEO.features.find(f=>f.properties.id_bv===String(k));return f?f.properties.lieu:'';};
 
+// ── Géométrie utilitaire ──────────────────────────────────────────────────────
+// Teste si un point [lng, lat] est dans un polygone (ray casting)
+function pointInPolygon(point, polygon) {
+  const [px, py] = point;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i], [xj, yj] = polygon[j];
+    const intersect = ((yi > py) !== (yj > py)) &&
+      (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInFeature(point, feature) {
+  const g = feature.geometry;
+  if (!g) return false;
+  const rings = g.type === 'Polygon'
+    ? g.coordinates
+    : g.type === 'MultiPolygon'
+      ? g.coordinates.reduce((a, p) => a.concat(p), [])
+      : [];
+  return rings.some(ring => pointInPolygon(point, ring));
+}
+
+// ── Chargement RPLS ───────────────────────────────────────────────────────────
+async function loadRPLS() {
+  try {
+    document.getElementById('lt').textContent = 'Chargement logements sociaux…';
+    // Récupère le ZIP sans paramètre de version (fonctionne sans)
+    const res = await fetch(`https://urbi-explore.fr/get_rpls?com=${COM_INSEE}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+
+    // Cherche un fichier JSON/GeoJSON dans le ZIP
+    let geojsonData = null;
+    const names = Object.keys(zip.files);
+
+    for (const name of names) {
+      const lc = name.toLowerCase();
+      if (lc.endsWith('.geojson') || lc.endsWith('.json')) {
+        const txt = await zip.files[name].async('string');
+        try { geojsonData = JSON.parse(txt); break; } catch(e) { /* continue */ }
+      }
+    }
+
+    // Si pas de GeoJSON, cherche un CSV
+    if (!geojsonData) {
+      for (const name of names) {
+        if (name.toLowerCase().endsWith('.csv')) {
+          const txt = await zip.files[name].async('string');
+          geojsonData = csvRPLStoGeoJSON(txt);
+          break;
+        }
+      }
+    }
+
+    if (!geojsonData) throw new Error('Aucun fichier exploitable dans le ZIP');
+
+    processRPLS(geojsonData);
+  } catch(e) {
+    console.warn('RPLS indisponible :', e.message);
+    // Mode dégradé : on continue sans les données HLM
+    hlmLoaded = true;
+  }
+}
+
+// Convertit un CSV RPLS (colonnes lon/lat ou x/y) en GeoJSON FeatureCollection
+function csvRPLStoGeoJSON(text) {
+  const lines = text.trim().split('\n');
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+
+  // Détecte les colonnes géo
+  const lonCol = headers.findIndex(h => /^(lon|lng|longitude|x)$/.test(h));
+  const latCol = headers.findIndex(h => /^(lat|latitude|y)$/.test(h));
+  if (lonCol < 0 || latCol < 0) return null;
+
+  // Colonne nb logements
+  const nbCol = headers.findIndex(h => /nb_log|nblgt|nb_lgt|nb_logt|logements|nb_hlm/.test(h));
+  // Colonne type financement
+  const typeCol = headers.findIndex(h => /type|finance|financement|nature/.test(h));
+
+  const features = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = lines[i].split(sep).map(v => v.trim().replace(/^"|"$/g, ''));
+    const lng = parseFloat(row[lonCol]);
+    const lat = parseFloat(row[latCol]);
+    if (isNaN(lng) || isNaN(lat)) continue;
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [lng, lat] },
+      properties: {
+        nb: nbCol >= 0 ? (parseInt(row[nbCol]) || 1) : 1,
+        type: typeCol >= 0 ? row[typeCol] : 'HLM',
+      }
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+// Traite le GeoJSON RPLS : extrait les points et agrège par BV
+function processRPLS(data) {
+  hlmPoints = [];
+  let features = [];
+
+  if (data.type === 'FeatureCollection') {
+    features = data.features || [];
+  } else if (data.type === 'Feature') {
+    features = [data];
+  } else if (Array.isArray(data)) {
+    features = data;
+  }
+
+  // Normalise : on veut des points avec nb logements
+  features.forEach(f => {
+    if (!f.geometry) return;
+    let pts = [];
+    if (f.geometry.type === 'Point') {
+      pts = [f.geometry.coordinates];
+    } else if (f.geometry.type === 'MultiPoint') {
+      pts = f.geometry.coordinates;
+    }
+    pts.forEach(coord => {
+      if (!coord || coord.length < 2) return;
+      const nb = f.properties
+        ? (parseInt(f.properties.nb_log || f.properties.nb || f.properties.nblgt || f.properties.nb_lgt || 1))
+        : 1;
+      hlmPoints.push({
+        lng: coord[0], lat: coord[1],
+        nb: isNaN(nb) ? 1 : nb,
+        type: f.properties ? (f.properties.type || f.properties.financement || 'HLM') : 'HLM',
+      });
+    });
+  });
+
+  hlmTotalLogements = hlmPoints.reduce((s, p) => s + p.nb, 0);
+
+  // Agrégation par bureau de vote via jointure spatiale
+  if (GEO && hlmPoints.length > 0) {
+    aggregateHLMbyBV();
+  }
+
+  hlmLoaded = true;
+  addHLMLayer();
+  updateHLMLegend();
+  console.log(`RPLS : ${hlmPoints.length} immeubles, ${hlmTotalLogements} logements`);
+}
+
+function aggregateHLMbyBV() {
+  hlmByBV.clear();
+  if (!GEO) return;
+
+  // Compte les logements dans chaque BV
+  GEO.features.forEach(feat => {
+    const key = String(feat.properties.id_bv);
+    let count = 0;
+    hlmPoints.forEach(pt => {
+      if (pointInFeature([pt.lng, pt.lat], feat)) {
+        count += pt.nb;
+      }
+    });
+    hlmByBV.set(key, { count });
+  });
+
+  // Calcule le % par rapport au total de la commune
+  hlmByBV.forEach((val, key) => {
+    val.pct = hlmTotalLogements > 0 ? val.count / hlmTotalLogements * 100 : 0;
+  });
+}
+
+// Renvoie les stats HLM pour un BV (ou null)
+function hlmForBV(key) {
+  return hlmByBV.get(String(key)) || null;
+}
+
+// Renvoie le taux HLM (% exprimés dans le BV) pour les corrélations
+// On l'exprime en % des logements sociaux de la commune situés dans ce BV
+function hlmPctForBV(key) {
+  const h = hlmForBV(key);
+  return h ? h.pct : 0;
+}
+
+// ── Couche HLM sur la carte ───────────────────────────────────────────────────
+function addHLMLayer() {
+  if (!map || !map.loaded() || hlmPoints.length === 0) return;
+
+  const geojson = {
+    type: 'FeatureCollection',
+    features: hlmPoints.map((p, i) => ({
+      type: 'Feature',
+      id: i,
+      geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+      properties: { nb: p.nb, type: p.type }
+    }))
+  };
+
+  if (map.getSource('hlm')) {
+    map.getSource('hlm').setData(geojson);
+  } else {
+    map.addSource('hlm', { type: 'geojson', data: geojson });
+    // Halo extérieur
+    map.addLayer({
+      id: 'hlm-halo',
+      type: 'circle',
+      source: 'hlm',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['get', 'nb'],
+          1, 5, 10, 9, 50, 14, 200, 22, 500, 34],
+        'circle-color': HLM_COLOR,
+        'circle-opacity': 0.12,
+        'circle-stroke-width': 0,
+      }
+    });
+    // Cercle principal
+    map.addLayer({
+      id: 'hlm-circle',
+      type: 'circle',
+      source: 'hlm',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['get', 'nb'],
+          1, 3, 10, 5.5, 50, 9, 200, 14, 500, 22],
+        'circle-color': HLM_COLOR,
+        'circle-opacity': 0.82,
+        'circle-stroke-color': 'rgba(255,255,255,0.4)',
+        'circle-stroke-width': 0.8,
+      }
+    });
+  }
+
+  // Visibilité selon le mode
+  setHLMLayerVisibility(mode === 'hlm');
+
+  // Tooltip au survol
+  map.on('mouseenter', 'hlm-circle', e => {
+    map.getCanvas().style.cursor = 'pointer';
+    if (!e.features.length) return;
+    const p = e.features[0].properties;
+    const html = `<div class="tt-t">Logement social</div>
+      <div class="tt-m">${esc(p.type||'HLM')}</div>
+      <div style="font-size:12px"><strong style="color:${HLM_COLOR}">${fN(p.nb)}</strong> <span style="color:var(--tm)">logement${p.nb>1?'s':''}</span></div>`;
+    popup._panelSource = false;
+    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+  });
+  map.on('mouseleave', 'hlm-circle', () => {
+    map.getCanvas().style.cursor = '';
+    if (popup && !popup._panelSource) popup.remove();
+  });
+}
+
+function setHLMLayerVisibility(visible) {
+  if (!map || !map.getSource('hlm')) return;
+  const v = visible ? 'visible' : 'none';
+  if (map.getLayer('hlm-halo'))   map.setLayoutProperty('hlm-halo',   'visibility', v);
+  if (map.getLayer('hlm-circle')) map.setLayoutProperty('hlm-circle', 'visibility', v);
+}
+
+function updateHLMLegend() {
+  const el = document.getElementById('hleg-stats');
+  if (!el) return;
+  const nbBV = hlmByBV.size;
+  const maxBV = [...hlmByBV.values()].reduce((m, v) => Math.max(m, v.count), 0);
+  el.innerHTML = `<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br>
+    <strong style="color:#fff">${nbBV}</strong> bureaux concernés<br>
+    max : <strong style="color:${HLM_COLOR}">${fN(maxBV)}</strong> lgts dans un BV`;
+}
+
+// ── Corrélations HLM ─────────────────────────────────────────────────────────
+function buildHLMCorrBlock() {
+  if (!hlmLoaded || hlmByBV.size === 0 || !CUR_DATA || CUR_DATA.length === 0) return '';
+  const keys = CUR_DATA;
+  const hlmX = keys.map(r => hlmPctForBV(r.bv));
+  const allZero = hlmX.every(v => v === 0);
+  if (allZero) return '';
+
+  function corrRow(lbl, ys, col) {
+    const rv = pearson(hlmX, ys);
+    const abs = Math.abs(rv);
+    const fc = rv >= 0 ? '#1565C0' : '#D32F2F';
+    const left = rv >= 0 ? 50 : 50 - abs * 50;
+    const w = abs * 50;
+    const sign = rv >= 0 ? '+' : '';
+    const str = abs < .2 ? 'très faible' : abs < .4 ? 'faible' : abs < .6 ? 'modérée' : abs < .8 ? 'forte' : 'très forte';
+    const dot = col ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${col};margin-right:4px;vertical-align:middle"></span>` : '';
+    return `<div class="cr">
+      <div class="cl">${dot}${esc(lbl)}</div>
+      <div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${fc}"></div></div>
+      <div class="cv" style="color:${fc}">${sign}${rv.toFixed(3)}</div>
+      <div class="cs">${str}</div>
+    </div>`;
+  }
+
+  let html = `<div class="cst" style="color:${HLM_COLOR};border-color:rgba(244,143,177,.2)">
+    <span style="display:inline-flex;align-items:center;gap:5px">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${HLM_COLOR}"></span>
+      % logements sociaux × résultats
+    </span>
+  </div>
+  <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">
+    r de Pearson — taux HLM par BV (% commune) vs indicateurs électoraux
+  </div>`;
+
+  // Participation
+  const partY = keys.map(r => r.ins > 0 ? r.vot / r.ins * 100 : 0);
+  html += corrRow('Participation', partY, null);
+
+  // Chaque candidat
+  cands().forEach(c => {
+    const ys = keys.map(r => r.exp > 0 ? (parseInt(r[c.nuance]) || 0) / r.exp * 100 : 0);
+    html += corrRow(c.nom, ys, c.color);
+  });
+
+  return html;
+}
+
+// ── CSV ───────────────────────────────────────────────────────────────────────
 function parseCSV(text){
   const lines=text.trim().split('\n').filter(l=>!l.startsWith('#')&&l.trim());
   const headers=lines[0].split(',').map(h=>h.trim());
@@ -377,7 +728,6 @@ function renderGlobal(){
   rKPIs(document.getElementById('g-k'),a);
   rBal(document.getElementById('g-b'),a);
   rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);
-  // Hémicycle pour MUN26T2
   const hDiv=document.getElementById('g-hemicycle');
   if(hDiv){
     if(CUR_EID==='MUN26T2'){hDiv.style.display='';renderHemicycle(hDiv);}
@@ -385,7 +735,6 @@ function renderGlobal(){
   }
 }
 
-// ─── Calcule le centre géographique d'un polygone GeoJSON ────────────────────
 function getFeatureCenter(key){
   if(!GEO)return null;
   const feat=GEO.features.find(f=>f.properties.id_bv===String(key));
@@ -399,52 +748,20 @@ function getFeatureCenter(key){
   return[sumLng/coords.length, sumLat/coords.length];
 }
 
-// ─── Zoom vers un bureau sur la carte (flyTo fluide) ─────────────────────────
 function zoomToBV(key){
   if(!map||!GEO)return;
   const center=getFeatureCenter(key);
   if(!center)return;
-  map.flyTo({
-    center:center,
-    zoom:Math.max(map.getZoom(),15.5),
-    duration:800,
-    essential:true
-  });
+  map.flyTo({center:center,zoom:Math.max(map.getZoom(),15.5),duration:800,essential:true});
 }
 
-// ─── Highlight + tooltip depuis le panel (survol) ────────────────────────────
-// Approche fiable : on utilise l'index dans GEO directement (generateId:true
-// dans MapLibre assigne des IDs numériques séquentiels = index du tableau)
 function panelHover(key){
   if(!map||!map.getSource('bv'))return;
-
-  // Retirer l'ancien highlight
-  if(panelHovId!==null){
-    map.setFeatureState({source:'bv',id:panelHovId},{hover:false});
-    panelHovId=null;
-  }
-
-  // Quitter → fermer le popup panel et sortir
-  if(key===null){
-    if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
-    return;
-  }
-
-  // Trouver l'index dans GEO (= ID MapLibre garanti grâce à generateId:true)
-  if(GEO){
-    const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));
-    if(idx>=0){
-      panelHovId=idx;
-      map.setFeatureState({source:'bv',id:panelHovId},{hover:true});
-    }
-  }
-
-  // Afficher le tooltip au centre géographique du polygone
+  if(panelHovId!==null){map.setFeatureState({source:'bv',id:panelHovId},{hover:false});panelHovId=null;}
+  if(key===null){if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}return;}
+  if(GEO){const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));if(idx>=0){panelHovId=idx;map.setFeatureState({source:'bv',id:panelHovId},{hover:true});}}
   const center=getFeatureCenter(key);
-  if(center&&popup){
-    popup._panelSource=true;
-    popup.setLngLat(center).setHTML(buildTT(key)).addTo(map);
-  }
+  if(center&&popup){popup._panelSource=true;popup.setLngLat(center).setHTML(buildTT(key)).addTo(map);}
 }
 
 function renderBVGrid(){
@@ -454,7 +771,9 @@ function renderBVGrid(){
   CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach(row=>{
     const bv=computeBV(row),w=bv.winner,col=w?w.color:'#555';
     const sp=bv.lists.slice(0,5).map(l=>`<div style="flex:${bv.exprimes>0?l.voix/bv.exprimes*100:0}%;background:${l.color};height:100%"></div>`).join('');
-    h+=`<div class="bvc" data-bv="${row.bv}" onclick="showBV('${row.bv}')" onmouseenter="panelHover('${row.bv}')" onmouseleave="panelHover(null)"><div class="bvcn">Bureau ${parseInt(row.bv).toString().padStart(2,'0')}</div><div class="bvcw"><div class="bvcd" style="background:${col}"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;color:rgba(255,255,255,.55)">${w?esc(w.nom.split(' ').slice(-1)[0]):'-'}</span><span class="bvcp" style="color:${col}">${w?fP(w.pct):'-'}</span></div><div class="spark">${sp}</div></div>`;
+    const hlm=hlmForBV(row.bv);
+    const hlmBadge=hlm&&hlm.count>0?`<span style="font-size:8px;color:${HLM_COLOR};margin-left:2px" title="${fN(hlm.count)} lgts sociaux">⬤${hlm.count}</span>`:'';
+    h+=`<div class="bvc" data-bv="${row.bv}" onclick="showBV('${row.bv}')" onmouseenter="panelHover('${row.bv}')" onmouseleave="panelHover(null)"><div class="bvcn" style="display:flex;align-items:center;gap:4px">Bureau ${parseInt(row.bv).toString().padStart(2,'0')}${hlmBadge}</div><div class="bvcw"><div class="bvcd" style="background:${col}"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;color:rgba(255,255,255,.55)">${w?esc(w.nom.split(' ').slice(-1)[0]):'-'}</span><span class="bvcp" style="color:${col}">${w?fP(w.pct):'-'}</span></div><div class="spark">${sp}</div></div>`;
   });
   g.innerHTML=h;
 }
@@ -498,12 +817,32 @@ function openCP(nuance){
   const best=scores[0],worst=scores[scores.length-1];
   let body=`<div class="cps"><div class="cpst">Chiffres clés</div><div class="kg"><div class="kc"><div class="kv" style="color:${col}">${fP(gp)}</div><div class="kl">Score global</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(best?best.pct:0)}</div><div class="kl">Meilleur BV</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(worst?worst.pct:0)}</div><div class="kl">Moins bon BV</div></div></div></div>`;
   body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir le bureau · Survolez pour voir sur la carte</div>`;
-  scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'rgba(255,255,255,.35)';body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span><span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
+  scores.forEach((bv,i)=>{
+    const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'rgba(255,255,255,.35)';
+    const hlm=hlmForBV(bv.key);
+    const hlmTag=hlm&&hlm.count>0?`<span title="${fN(hlm.count)} lgts sociaux" style="font-size:8px;color:${HLM_COLOR};flex-shrink:0">⬤${hlm.count}</span>`:'';
+    body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span>${hlmTag}<span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;
+  });
   body+=`</div>`;
   if(corrs.length>0){
     body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;
     corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?'#1565C0':'#C62828',left=cr.r>=0?50:50-abs*50,w=abs*50,tc2=ctxt(cr.color),str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});
     body+=`</div>`;
+  }
+  // Corrélation HLM pour ce candidat
+  if(hlmLoaded && hlmByBV.size > 0){
+    const hlmX=keys.map(r=>hlmPctForBV(r.bv));
+    const candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0);
+    const rv=pearson(hlmX,candY);
+    const abs=Math.abs(rv),fc=rv>=0?'#1565C0':'#D32F2F',left=rv>=0?50:50-abs*50,w=abs*50,sign=rv>=0?'+':'',str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';
+    body+=`<div class="cps"><div class="cpst" style="color:${HLM_COLOR}">Corrélation logements sociaux</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">r de Pearson : % HLM par BV × score ${esc(nm)}</div>
+    <div class="cr">
+      <div class="cl"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${HLM_COLOR};margin-right:4px;vertical-align:middle"></span>% Logements sociaux</div>
+      <div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${fc}"></div></div>
+      <div class="cv" style="color:${fc}">${sign}${rv.toFixed(3)}</div>
+      <div class="cs">${str}</div>
+    </div></div>`;
   }
   document.getElementById('cp-b').innerHTML=body;
   document.querySelectorAll('.pane').forEach(p=>{p.style.display='none';p.classList.remove('active');});
@@ -511,6 +850,7 @@ function openCP(nuance){
   document.getElementById('tc').scrollTop=0;
   setCandMode(nuance,col,nm,mx,gp);
 }
+
 function closeCP(){
   curCand=null;document.getElementById('cp').style.display='none';
   const ns=['r','b','s','c'],tabs=document.querySelectorAll('.tab');
@@ -526,6 +866,7 @@ function setCandMode(nuance,col,nm,mx,avg){
   e.push('#1e1e23');
   if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);
   document.getElementById('leg').style.display='none';document.getElementById('pleg').style.display='none';
+  document.getElementById('hleg').style.display='none';
   const cl=document.getElementById('cleg');cl.style.display='';
   document.getElementById('cl-t').textContent=`${nm} — intensité`;
   document.getElementById('cl-t').style.color=col;
@@ -536,33 +877,28 @@ function setCandMode(nuance,col,nm,mx,avg){
 function showBV(key){
   const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return;
   const bv=computeBV(row);
-  document.getElementById('bvd-t').textContent=`Bureau ${parseInt(key).toString().padStart(2,'0')}`;
+  const hlm=hlmForBV(key);
+  const hlmInfo=hlm&&hlm.count>0
+    ?`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px"><span>⬤</span>${fN(hlm.count)} lgts sociaux (${fP(hlm.pct)} commune)</span>`
+    :'';
+  document.getElementById('bvd-t').innerHTML=`Bureau ${parseInt(key).toString().padStart(2,'0')}${hlmInfo}`;
   document.getElementById('bvd-m').innerHTML=`${bv.lieu?`<strong>${esc(bv.lieu)}</strong><br>`:''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;
   rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));
   const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;
-  // Fermer le tooltip du panel avant de zoomer
   if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}
-  // Zoom sur le bureau dans la carte
   zoomToBV(key);
 }
 function closeBV(){
   const d=document.getElementById('bvd');d.classList.remove('vis');
   setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);
   document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));
-  // Revenir au zoom global sur la ville
   zoomToCity();
 }
 
-// ─── Zoom global sur Villejuif ───────────────────────────────────────────────
 function zoomToCity(){
   if(!map)return;
-  map.flyTo({
-    center:[2.362,48.793],
-    zoom:13.3,
-    duration:700,
-    essential:true
-  });
+  map.flyTo({center:[2.362,48.793],zoom:13.3,duration:700,essential:true});
 }
 
 function sTab(name){
@@ -590,6 +926,13 @@ function bvColor(row,m){
     const t=(.5-r)*2;return`rgb(${Math.round(255-t*234)},${Math.round(255-t*154)},${Math.round(255-t*63)})`;
   }
   if(m==='frag'){const t=Math.max(0,Math.min(1,(bv.enp-2)/5));return`rgb(${Math.round(t*156)},${Math.round(200-t*161)},${Math.round(83+t*79)})`;}
+  if(m==='hlm'){
+    const h=hlmForBV(row.bv);
+    if(!h||h.count===0)return'#1e1e23';
+    const maxC=Math.max(...[...hlmByBV.values()].map(v=>v.count),1);
+    const t=Math.max(0,Math.min(1,h.count/maxC));
+    return`rgba(244,143,177,${0.15+t*0.6})`;
+  }
   return'#444';
 }
 function buildColorExpr(){
@@ -607,6 +950,8 @@ function setMode(m){
   document.getElementById('leg').style.display='none';
   document.getElementById('pleg').style.display='none';
   document.getElementById('cleg').style.display='none';
+  document.getElementById('hleg').style.display='none';
+  setHLMLayerVisibility(m === 'hlm');
   if(m==='winner')renderWinLeg();
   else if(m==='participation'){
     const pl=document.getElementById('pleg');pl.style.display='';
@@ -620,6 +965,9 @@ function setMode(m){
   } else if(m==='frag'){
     const lg=document.getElementById('leg');lg.style.display='';
     lg.innerHTML='<h4>Fragmentation (ENP)</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#00C853,#9C27B0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Faible</span><span>Moyen</span><span>Élevé</span></div>';
+  } else if(m==='hlm'){
+    document.getElementById('hleg').style.display='';
+    updateHLMLegend();
   }
   updateColors();
 }
@@ -651,6 +999,15 @@ function renderCorr(){
   pairs.slice(0,6).forEach(p=>html+=cr(`${cname(p.n1)} ↔ ${cname(p.n2)}`,p.r));
   html+=`<div class="cst">Participation ↔ score</div>`;
   corrP.forEach(item=>html+=cr(`Part. ↔ ${cname(item.n)}`,item.r));
+
+  // ── Bloc HLM dans les corrélations ──
+  const hlmBlock = buildHLMCorrBlock();
+  if (hlmBlock) html += hlmBlock;
+  else if (hlmLoaded && hlmByBV.size === 0) {
+    html += `<div class="cst" style="color:${HLM_COLOR}">Logements sociaux</div>
+    <div style="font-size:10px;color:var(--tm);padding:6px 0">Données RPLS non disponibles pour cette commune.</div>`;
+  }
+
   html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;
   nuances.forEach(n=>{html+=`<th style="padding:3px 2px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n).split(' ').slice(-1)[0].substring(0,7))}</th>`;});
   html+=`</tr>`;
@@ -671,9 +1028,11 @@ function renderCorr(){
 function buildTT(key){
   const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return'';
   const bv=computeBV(row);
+  const hlm=hlmForBV(key);
   let rows=bv.lists.slice(0,3).map(l=>`<div class="tt-r"><div class="tt-d" style="background:${l.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nom)}</span><span style="font-weight:700;color:${l.color};min-width:40px;text-align:right">${fP(l.pct)}</span></div>`).join('');
   if(curCand){const v=parseInt(row[curCand])||0,p=row.exp>0?v/row.exp*100:0,c=ccolor(curCand);rows=`<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>`+rows;}
-  return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` — ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}`;
+  const hlmRow=hlm&&hlm.count>0?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(hlm.pct)} commune</span></div>`:'';
+  return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` — ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}${hlmRow}`;
 }
 
 function buildDrop(){
@@ -734,7 +1093,6 @@ function initMap(){
     map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','bv-fill',()=>{
       map.getCanvas().style.cursor='';
-      // Ne fermer le popup que s'il vient de la carte (pas du panel)
       if(popup&&!popup._panelSource)popup.remove();
       if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}
     });
@@ -743,10 +1101,13 @@ function initMap(){
       const f=e.features[0],k=f.properties.id_bv;
       if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});
       hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});
-      // Ce popup vient de la carte → marquer comme tel
       if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}
     });
     map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
+
+    // Si les données HLM sont déjà chargées, on ajoute la couche maintenant
+    if(hlmLoaded && hlmPoints.length > 0) addHLMLayer();
+
     document.getElementById('ld').classList.add('h');
     renderWinLeg();
   });
@@ -780,9 +1141,19 @@ async function init(){
   buildDrop();
   if(CUR_EID)await loadCSV(CUR_EID);
   renderGlobal();renderBVGrid();buildFC();
+
+  // Charge RPLS en parallèle (non-bloquant)
+  loadRPLS().then(()=>{
+    // Re-agrège une fois le GEO disponible
+    if(GEO && hlmPoints.length > 0) aggregateHLMbyBV();
+    renderBVGrid(); // Rafraîchit les badges HLM
+    updateHLMLegend();
+    if(mode==='hlm') updateColors();
+    if(map && map.loaded()) addHLMLayer();
+  });
+
   initMap();
 }
-
 
 // ─── Hémicycle conseil municipal MUN26T2 ─────────────────────────────────────
 function renderHemicycle(container){
