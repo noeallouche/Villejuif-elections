@@ -592,7 +592,10 @@ function updateHLMLegend() {
 function buildHLMCorrBlock() {
   if (!hlmReady || hlmByBV.size === 0 || !CUR_DATA || CUR_DATA.length === 0) return '';
   const keys = CUR_DATA;
-  const hlmX = keys.map(r => hlmPctForBV(r.bv));
+  const hlmX = keys.map(r => {
+    const h = hlmForBV(r.bv);
+    return (h && r.ins > 0) ? (h.count / r.ins * 100) : 0;
+  });
   if (hlmX.every(v => v === 0)) return '';
 
   function corrRow(lbl, ys, col) {
@@ -619,7 +622,7 @@ function buildHLMCorrBlock() {
     </span>
   </div>
   <div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">
-    r de Pearson — taux HLM par BV (% commune) vs indicateurs électoraux
+    r de Pearson — taux HLM par inscrit au BV vs indicateurs électoraux
   </div>`;
 
   const partY = keys.map(r => r.ins > 0 ? r.vot / r.ins * 100 : 0);
@@ -906,7 +909,10 @@ function openCP(nuance) {
 
   // Corrélation HLM pour ce candidat
   if (hlmReady && hlmByBV.size > 0) {
-    const hlmX = keys.map(r => hlmPctForBV(r.bv));
+    const hlmX = keys.map(r => {
+      const h = hlmForBV(r.bv);
+      return (h && r.ins > 0) ? (h.count / r.ins * 100) : 0;
+    });
     const candY = keys.map(r => r.exp > 0 ? (parseInt(r[nuance]) || 0) / r.exp * 100 : 0);
     const rv  = pearson(hlmX, candY);
     const abs = Math.abs(rv), fc = rv >= 0 ? '#1565C0' : '#D32F2F';
