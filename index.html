@@ -554,7 +554,7 @@ function addHLMLayer() {
       const p = e.features[0].properties;
       const html = `<div class="tt-t">Logements sociaux BV ${parseInt(p.bv).toString().padStart(2,'0')}</div>
         <div style="font-size:12px;margin-top:4px"><strong style="color:${HLM_COLOR}">${fN(p.nb)}</strong> <span style="color:var(--tm)">logement${p.nb>1?'s':''}</span></div>
-        <div style="font-size:10px;color:var(--tm);margin-top:2px">${fP(hlmPctForBV(p.bv))} du parc communal</div>`;
+        <div style="font-size:10px;color:var(--tm);margin-top:2px">${fP(row.ins > 0 ? hlm.count / row.ins * 100 : 0)} / inscrits</div>`;
       popup._panelSource = false;
       popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
     });
@@ -1169,7 +1169,7 @@ function buildTT(key) {
     rows = `<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>` + rows;
   }
   const hlmRow = hlm && hlm.count > 0
-    ? `<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(hlm.pct)} commune</span></div>`
+    ? `<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(row.ins > 0 ? hlm.count / row.ins * 100 : 0)} / inscrits</span></div>`
     : '';
   return `<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu ? ` — ${esc(bv.lieu)}` : ''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}${hlmRow}`;
 }
