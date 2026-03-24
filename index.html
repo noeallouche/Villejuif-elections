@@ -973,7 +973,7 @@ function showBV(key) {
   const bv  = computeBV(row);
   const hlm = hlmForBV(key);
   const hlmInfo = hlm && hlm.count > 0
-    ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px">⬤ ${fN(hlm.count)} lgts sociaux (${fP(hlm.pct)} commune)</span>`
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px">⬤ ${fN(hlm.count)} lgts sociaux (${fP(r.ins > 0 ? hlm.count / r.ins * 100 : 0)} / inscrits)</span>`
     : '';
   document.getElementById('bvd-t').innerHTML = `Bureau ${parseInt(key).toString().padStart(2,'0')}${hlmInfo}`;
   document.getElementById('bvd-m').innerHTML = `${bv.lieu ? `<strong>${esc(bv.lieu)}</strong><br>` : ''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;
