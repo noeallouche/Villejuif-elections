@@ -272,7 +272,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 <script>
 const DATA_BASE = './data/';
 // URL API data.gouv.fr — pointe vers un ZIP contenant le CSV RPLS millésime courant
-const RPLS_DATA_URL = 'https://www.data.gouv.fr/api/1/datasets/r/7649e51e-9418-4173-9dc6-cefb94bbd7c0';
+const RPLS_DATA_URL = './data/rpls_villejuif.csv';
 // Code INSEE de la commune (Villejuif = 94076)
 const COM_INSEE = '94076';
 
@@ -398,26 +398,10 @@ async function loadRPLS() {
   const statusEl = document.getElementById('hlm-status');
   if (statusEl) statusEl.textContent = '(chargement…)';
   try {
-    const res = await fetch(RPLS_DATA_URL);
+    const res = await fetch(RPLS_DATA_URL + '?v=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const contentType = res.headers.get('content-type') || '';
-    let rows = [];
-
-    if (contentType.includes('zip') || RPLS_DATA_URL.endsWith('.zip')) {
-      // Fichier ZIP — décompresser avec JSZip
-      const blob = await res.blob();
-      const zip  = await JSZip.loadAsync(blob);
-      const csvFile = Object.values(zip.files).find(f => !f.dir && f.name.match(/\.csv$/i));
-      if (!csvFile) throw new Error('Aucun CSV dans le ZIP RPLS');
-      const text = await csvFile.async('string');
-      rows = parseDelimited(text);
-    } else {
-      // CSV direct
-      const text = await res.text();
-      rows = parseDelimited(text);
-    }
-
+    const text = await res.text();
+    const rows = parseDelimited(text);
     processRPLS(rows);
   } catch (e) {
     console.warn('RPLS load failed:', e);
@@ -433,27 +417,40 @@ function processRPLS(data) {
   hlmByIris.clear();
   let totalLogementsCommune = 0;
 
+  // Agrégation : chaque ligne = 1 logement social
+  // On groupe par code IRIS (PLG_IRIS2024_CODE)
+  const irisCounts = new Map();
+  const irisLoyers = new Map();
+
   (data || []).forEach(row => {
-    // Colonnes possibles selon millésime RPLS
-    const irisId = String(rplsCol(row, 'CodGeo', 'codgeo', 'CODGEO', 'cod_geo', 'iris') || '');
-    if (!irisId || !irisId.startsWith(COM_INSEE)) return;
+    // Filtrer sur Villejuif (DEPCOM = 94076)
+    const depcom = rplsCol(row, 'DEPCOM', 'depcom') || '';
+    if (depcom !== COM_INSEE) return;
 
-    const nbPLS = parseInt(rplsCol(row, 'nbLsPls', 'nblspls', 'NbLsPls', 'nb_ls_pls') || 0) || 0;
-    const nbMES = parseInt(rplsCol(row, 'nbLsMes', 'nblsmes', 'NbLsMes', 'nb_ls_mes') || 0) || 0;
-    // Certains millésimes ont une colonne totale directe
-    const nbTot = parseInt(rplsCol(row, 'nbLs', 'nbls', 'NbLs', 'nb_ls') || 0) || 0;
-    const nbLogements = nbTot > 0 ? nbTot : (nbPLS + nbMES);
-    const moyLoyer = parseFloat(rplsCol(row, 'moyLoy', 'moyloy', 'MoyLoy', 'moy_loy') || 0) || 0;
+    const irisId = String(rplsCol(row, 'PLG_IRIS2024_CODE', 'plg_iris2024_code', 'PLG_IRIS2024', 'IRIS') || '').trim();
+    if (!irisId) return;
 
-    if (nbLogements === 0) return;
-    totalLogementsCommune += nbLogements;
-    hlmByIris.set(irisId, { count: nbLogements, loyer: moyLoyer });
+    totalLogementsCommune++;
+
+    irisCounts.set(irisId, (irisCounts.get(irisId) || 0) + 1);
+
+    // Loyer si disponible
+    const loyer = parseFloat(rplsCol(row, 'LOCAT', 'locat') || 0) || 0;
+    if (loyer > 0) {
+      const prev = irisLoyers.get(irisId) || { sum: 0, n: 0 };
+      irisLoyers.set(irisId, { sum: prev.sum + loyer, n: prev.n + 1 });
+    }
+  });
+
+  irisCounts.forEach((count, irisId) => {
+    const lInfo = irisLoyers.get(irisId);
+    const loyer = lInfo && lInfo.n > 0 ? lInfo.sum / lInfo.n : 0;
+    hlmByIris.set(irisId, { count, loyer });
   });
 
   hlmTotalLogements = totalLogementsCommune;
   aggregateHLMbyBV();
 
-  // Déterminer le mode de distribution
   if (hlmByBV.size > 0) {
     hlmDistributionMode = 'iris';
   } else if (hlmByIris.size > 0) {
@@ -466,15 +463,18 @@ function processRPLS(data) {
 
   const statusEl = document.getElementById('hlm-status');
   if (statusEl) {
-    if (hlmDistributionMode === 'iris') statusEl.textContent = `(${fN(totalLogementsCommune)} lgts, ${hlmByBV.size} BV)`;
-    else if (hlmDistributionMode === 'fallback_uniform') statusEl.textContent = `(${fN(totalLogementsCommune)} lgts, pas de lien IRIS↔BV)`;
-    else statusEl.textContent = '(aucun logement trouvé)';
+    if (hlmDistributionMode === 'iris')
+      statusEl.textContent = `(${fN(totalLogementsCommune)} lgts, ${hlmByBV.size} BV)`;
+    else if (hlmDistributionMode === 'fallback_uniform')
+      statusEl.textContent = `(${fN(totalLogementsCommune)} lgts, pas de lien IRIS↔BV)`;
+    else
+      statusEl.textContent = '(aucun logement trouvé)';
   }
 
   if (typeof updateColors   === 'function') updateColors();
   if (typeof updateHLMLegend === 'function') updateHLMLegend();
 
-  console.log(`RPLS chargé : ${totalLogementsCommune} logements, mode=${hlmDistributionMode}, iris=${hlmByIris.size}, BV=${hlmByBV.size}`);
+  console.log(`RPLS local chargé : ${totalLogementsCommune} logements, mode=${hlmDistributionMode}, iris=${hlmByIris.size}, BV=${hlmByBV.size}`);
 }
 
 // ── Accesseurs HLM ────────────────────────────────────────────────────────────
