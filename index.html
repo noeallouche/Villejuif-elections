@@ -304,6 +304,11 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
       <input type="range" id="ev-thr" min="0" max="500" step="10" value="20" oninput="document.getElementById('ev-thr-lbl').textContent=this.value;renderEvol()">
       <span id="ev-thr-lbl">20</span> voix
     </div>
+    <div class="thr-ctrl" style="margin-left:4px;border-left:1px solid var(--bd);padding-left:10px">
+      <span title="Penalise les reports entre blocs ideologiquement eloignes">Contrainte ideo.</span>
+      <input type="range" id="ev-ideo" min="0" max="10" step="0.5" value="3" oninput="document.getElementById('ev-ideo-lbl').textContent=this.value;renderEvol()">
+      <span id="ev-ideo-lbl">3</span>
+    </div>
   </div>
   <div id="evol-body">
     <div id="sk-wrap">
@@ -471,10 +476,23 @@ document.getElementById('ld').classList.add('h');renderWinLeg();});}
    ÉVOLUTIONS \u2014 OLS écologique + Sankey
 ══════════════════════════════════════════════════════════════════════════════ */
 
-/* Résolution système linéaire Ax=b par Gauss-Jordan avec Ridge */
-function solveLS(A,b){
-  const n=b.length,eps=1e-6;
-  const M=A.map((row,i)=>[...row.map((v,j)=>i===j?v+eps:v),b[i]]);
+/* Position sur axe G/D pour chaque bloc (0=extreme gauche .. 5=extreme droite) */
+const BLOC_POS={ex_gauche:0,gauche_rad:1,gauche:2,centre:3,droite:4,ex_droite:5};
+function blocPos(nuance,eid){
+  const el=ELECTIONS.find(e=>e.id===eid)||{};
+  const c=(el.candidates||[]).find(c=>c.nuance===nuance);
+  if(!c||!c.bloc)return 2.5;
+  return BLOC_POS[c.bloc]!==undefined?BLOC_POS[c.bloc]:2.5;
+}
+function ideoDist(nuanceA,eidA,nuanceB,eidB){
+  if(nuanceA==='__ABS__'||nuanceB==='__ABS__')return 0.15;
+  return Math.abs(blocPos(nuanceA,eidA)-blocPos(nuanceB,eidB))/5;
+}
+
+/* Gauss-Jordan avec Ridge differencie : lambda[i] penalite par variable */
+function solveLSRidge(A,b,lambda){
+  const n=b.length;
+  const M=A.map((row,i)=>[...row.map((v,j)=>i===j?v+lambda[i]:v),b[i]]);
   for(let c=0;c<n;c++){
     let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;
     [M[c],M[mx]]=[M[mx],M[c]];
@@ -486,9 +504,13 @@ function solveLS(A,b){
   return M.map(r=>r[n]);
 }
 
-/* OLS écologique : pour chaque liste cible B, régresse ses voix bureau-par-bureau
-   sur les voix des listes source A. Retourne une matrice de flux en voix absolues. */
+/* OLS ecologique pondere + Ridge ideologique.
+   Poids par bureau : bureaux avec fort taux HLM ou fort differentiel de participation
+   portent plus de poids (ils sont plus discriminants socialement).
+   Penalite Ridge : proportionnelle a dist_ideo(source, cible)^2 \u2014 rabat les
+   reports improbables (ex-gauche vers ex-droite) vers zero. */
 function computeOLS(eidA,eidB,dataA,dataB){
+  const alpha=parseFloat(document.getElementById('ev-ideo')?.value||0);
   const elA=ELECTIONS.find(e=>e.id===eidA)||{},elB=ELECTIONS.find(e=>e.id===eidB)||{};
   const cA=elA.candidates||[],cB=elB.candidates||[];
   const mapA=new Map(dataA.map(r=>[r.bv,r])),mapB=new Map(dataB.map(r=>[r.bv,r]));
@@ -496,14 +518,24 @@ function computeOLS(eidA,eidB,dataA,dataB){
   if(bvs.length<3)return null;
   const n=bvs.length;
 
-  /* totaux globaux */
   const totA={},totB={};
   cA.forEach(c=>{totA[c.nuance]=dataA.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
   cB.forEach(c=>{totB[c.nuance]=dataB.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
   const absA=dataA.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
   const absB=dataB.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
 
-  /* vecteurs par BV */
+  /* Poids par bureau : HLM + differentiel participation inter-elections */
+  const K_HLM=2,K_PART=3;
+  const weights=bvs.map(bv=>{
+    const rA=mapA.get(bv),rB=mapB.get(bv);
+    const pHLM=hlmReady?hlmPctForBV(bv):0;
+    const partA=rA.ins>0?(rA.vot||0)/rA.ins*100:0;
+    const partB=rB.ins>0?(rB.vot||0)/rB.ins*100:0;
+    return 1+K_HLM*(pHLM/100)+K_PART*(Math.abs(partA-partB)/100);
+  });
+  const wSum=weights.reduce((s,w)=>s+w,0);
+  const wNorm=weights.map(w=>w*n/wSum);
+
   const vA={},vB={};
   cA.forEach(c=>{vA[c.nuance]=bvs.map(bv=>parseInt(mapA.get(bv)[c.nuance])||0);});
   vA['__ABS__']=bvs.map(bv=>Math.max(0,(mapA.get(bv).ins||0)-(mapA.get(bv).vot||0)));
@@ -513,17 +545,34 @@ function computeOLS(eidA,eidB,dataA,dataB){
   const srcA=[...cA.map(c=>c.nuance),'__ABS__'];
   const tgtB=[...cB.map(c=>c.nuance),'__ABS__'];
 
-  /* OLS pour chaque cible */
+  /* Variance ponderee de chaque source \u2014 sert a calibrer les penalites */
+  const xScale=srcA.map(na=>{
+    const x=vA[na];
+    const mu=x.reduce((s,v,i)=>s+v*wNorm[i],0)/n;
+    const va=x.reduce((s,v,i)=>s+wNorm[i]*(v-mu)*(v-mu),0)/n;
+    return Math.max(va,1);
+  });
+
   const flows={};
   tgtB.forEach(nb=>{
     const y=vB[nb];
     const X=srcA.map(na=>vA[na]);
     const p=srcA.length;
-    /* X'X */
-    const XtX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*X[j][k];return s;}));
-    /* X'y */
-    const Xty=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*y[k];return s;});
-    const beta=solveLS(XtX,Xty);
+
+    /* X'WX pondere */
+    const XtWX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>{
+      let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*X[j][k];return s;
+    }));
+    /* X'Wy pondere */
+    const XtWy=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*y[k];return s;});
+
+    /* Penalite = base + alpha * dist_ideo^2 * echelle_variance */
+    const lambda=srcA.map((na,i)=>{
+      const d=ideoDist(na,eidA,nb,eidB);
+      return 1e-4*xScale[i]+alpha*d*d*xScale[i];
+    });
+
+    const beta=solveLSRidge(XtWX,XtWy,lambda);
     flows[nb]={};
     srcA.forEach((na,i)=>{
       const tot=na==='__ABS__'?absA:(totA[na]||0);
@@ -531,13 +580,7 @@ function computeOLS(eidA,eidB,dataA,dataB){
     });
   });
 
-  /* Normalisation : somme des sorties depuis chaque source = total réel source */
-  srcA.forEach(na=>{
-    const tot=na==='__ABS__'?absA:(totA[na]||0);
-    const sumOut=tgtB.reduce((s,nb)=>s+(flows[nb][na]||0),0);
-    if(sumOut>0&&tot>0){const f=tot/sumOut;tgtB.forEach(nb=>flows[nb][na]=(flows[nb][na]||0)*f);}
-  });
-
+  
   return{flows,totA,totB,absA,absB,cA,cB,bvCount:bvs.length,elA,elB};
 }
 
