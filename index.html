@@ -294,9 +294,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
   <div id="evol-hdr">
     <div class="ph2">Évolutions · flux de vote</div>
     <div class="epair">
-      <select id="ev-b" onchange="renderEvol()"></select>
-      <span class="earrow">→</span>
       <select id="ev-a" onchange="renderEvol()"></select>
+      <span class="earrow">→</span>
+      <select id="ev-b" onchange="renderEvol()"></select>
     </div>
     <div id="evol-info"></div>
     <div class="thr-ctrl">
@@ -542,7 +542,7 @@ function computeOLS(eidA,eidB,dataA,dataB){
 }
 
 function populateEvolSelects(){
-  const sa=document.getElementById('ev-b'),sb=document.getElementById('ev-a');
+  const sa=document.getElementById('ev-a'),sb=document.getElementById('ev-b');
   const va=sa.value,vb=sb.value;
   const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join('');
   sa.innerHTML=opts;sb.innerHTML=opts;
@@ -554,8 +554,8 @@ function populateEvolSelects(){
 }
 
 async function renderEvol(){
-  const eidA=document.getElementById('ev-b').value;
-  const eidB=document.getElementById('ev-a').value;
+  const eidA=document.getElementById('ev-a').value;
+  const eidB=document.getElementById('ev-b').value;
   const thresh=parseInt(document.getElementById('ev-thr').value)||0;
   const info=document.getElementById('evol-info');
   if(!eidA||!eidB||eidA===eidB){
@@ -584,7 +584,9 @@ function drawSankey(res,thresh){
   const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];
   const tgtNodes=[...cB.map(c=>({...c,_tot:totB[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absB}];
 
-  const PAD=40,LBL=130,NW=16,GAP=5;
+  const PAD=44,NW=14,GAP=5,LBL_W=140;
+  // source nodes start at LBL_W, target nodes end at W-LBL_W
+  const X_SRC=LBL_W, X_TGT=W-LBL_W-NW;
   const areaH=H-PAD*2;
 
   function layout(nodes,cx){
@@ -593,8 +595,8 @@ function drawSankey(res,thresh){
     let y=PAD;
     nodes.forEach(n=>{n._h=Math.max(3,Math.round(n._tot*sc));n._y=y;n._cx=cx;y+=n._h+GAP;});
   }
-  layout(srcNodes,LBL);
-  layout(tgtNodes,W-LBL);
+  layout(srcNodes,X_SRC);
+  layout(tgtNodes,X_TGT);
 
   /* accumulateurs de position */
   const outY={};srcNodes.forEach(n=>outY[n.nuance]=n._y);
@@ -659,11 +661,11 @@ function drawSankey(res,thresh){
     const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
     const short=nom.length>22?nom.substring(0,20)+'…':nom;
     const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',n._cx-8);t.setAttribute('y',n._y+n._h/2);
+    t.setAttribute('x',n._cx-10);t.setAttribute('y',n._y+n._h/2);
     t.setAttribute('text-anchor','end');t.setAttribute('dominant-baseline','central');
     t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
     t.textContent=short;svg.appendChild(t);
-    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx-8);v.setAttribute('y',n._y+n._h/2+13);v.setAttribute('text-anchor','end');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
+    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx-10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','end');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
   });
 
   /* noeuds + labels cible */
@@ -676,17 +678,17 @@ function drawSankey(res,thresh){
     const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
     const short=nom.length>22?nom.substring(0,20)+'…':nom;
     const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',n._cx+NW+8);t.setAttribute('y',n._y+n._h/2);
-    t.setAttribute('dominant-baseline','central');
+    t.setAttribute('x',n._cx+NW+10);t.setAttribute('y',n._y+n._h/2);
+    t.setAttribute('text-anchor','start');t.setAttribute('dominant-baseline','central');
     t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
     t.textContent=short;svg.appendChild(t);
-    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx+NW+8);v.setAttribute('y',n._y+n._h/2+13);v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
+    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx+NW+10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','start');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
   });
 
   /* titres colonnes */
   function colTitle(x,label){const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',PAD-16);t.setAttribute('text-anchor','middle');t.setAttribute('fill','#b8282e');t.setAttribute('font-size','11');t.setAttribute('font-weight','600');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=label;svg.appendChild(t);}
-  colTitle(LBL+NW/2,(elA.label||'')+' · '+(elA.date||''));
-  colTitle(W-LBL+NW/2,(elB.label||'')+' · '+(elB.date||''));
+  colTitle(X_SRC+NW/2,(elA.label||'')+' \u00b7 '+(elA.date||''));
+  colTitle(X_TGT+NW/2,(elB.label||'')+' \u00b7 '+(elB.date||''));
 }
 
 function renderEvolSide(res,thresh){
