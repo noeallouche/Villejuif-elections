@@ -542,7 +542,7 @@ function computeOLS(eidA,eidB,dataA,dataB){
 }
 
 function populateEvolSelects(){
-  const sa=document.getElementById('ev-a'),sb=document.getElementById('ev-b');
+  const sa=document.getElementById('ev-b'),sb=document.getElementById('ev-a');
   const va=sa.value,vb=sb.value;
   const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join('');
   sa.innerHTML=opts;sb.innerHTML=opts;
@@ -554,8 +554,8 @@ function populateEvolSelects(){
 }
 
 async function renderEvol(){
-  const eidA=document.getElementById('ev-a').value;
-  const eidB=document.getElementById('ev-b').value;
+  const eidA=document.getElementById('ev-b').value;
+  const eidB=document.getElementById('ev-a').value;
   const thresh=parseInt(document.getElementById('ev-thr').value)||0;
   const info=document.getElementById('evol-info');
   if(!eidA||!eidB||eidA===eidB){
