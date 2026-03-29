@@ -185,6 +185,15 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .fl-rv{font-family:var(--fd);font-size:13px;font-weight:600;flex-shrink:0;min-width:48px;text-align:right}
 .fl-rp{font-size:9px;color:var(--tm);flex-shrink:0;min-width:34px;text-align:right}
 .ev-warn{font-size:10px;color:var(--tm);background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 9px;margin-bottom:10px;line-height:1.5}
+#sk-info-btn{position:absolute;bottom:12px;right:12px;z-index:50;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:rgba(255,255,255,.45);font-size:11px;font-weight:700;font-family:Georgia,serif;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;user-select:none;flex-shrink:0}
+#sk-info-btn:hover{background:var(--acl);border-color:var(--ac);color:var(--ac)}
+#sk-info-pop{display:none;position:absolute;bottom:42px;right:12px;z-index:100;width:310px;background:rgba(16,17,20,.97);border:1px solid rgba(255,255,255,.14);border-radius:var(--r);padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,.6);font-size:11px;line-height:1.6;color:var(--ts)}
+#sk-info-pop.vis{display:block}
+#sk-info-pop h5{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--ac);margin-bottom:8px}
+#sk-info-pop p{margin-bottom:8px}
+#sk-info-pop p:last-child{margin-bottom:0}
+#sk-info-pop strong{color:#fff;font-weight:600}
+#sk-info-pop .warn-line{font-size:10px;color:var(--tm);background:rgba(255,255,255,.03);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 8px;margin-top:8px;line-height:1.5}
 @media(max-width:900px){
   :root{--panel:0px;--nav:80px}
   #map{right:0;bottom:0}
@@ -300,6 +309,14 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
     <div id="sk-wrap">
       <svg id="sk-svg" xmlns="http://www.w3.org/2000/svg"></svg>
       <div class="sk-tip" id="sk-tip"></div>
+      <div id="sk-info-btn" onclick="toggleInfoPop(event)" title="Comprendre la méthode">i</div>
+      <div id="sk-info-pop">
+        <h5>Comment les flux sont estimés</h5>
+        <p><strong>Régression OLS écologique</strong> sur les bureaux de vote communs aux deux élections. Pour chaque liste cible, on régresse ses voix bureau par bureau sur les voix de chaque liste source.</p>
+        <p>Les coefficients indiquent : dans les bureaux où la liste X était forte, la liste Y tend-elle à l'être aussi ? Multipliés par les totaux réels, ils donnent les flux en voix absolues.</p>
+        <p><strong>Plus fiable</strong> entre deux tours d'un même scrutin (même électorat, même jour). <strong>Plus fragile</strong> entre deux élections différentes, où la corrélation spatiale reflète autant la géographie sociale que le vrai report individuel.</p>
+        <div class="warn-line">Les flux affichés sont des <strong>estimations statistiques</strong>, pas des comportements individuels observés. Ils mesurent des similarités de bureau à bureau, pas des transferts certifiés.</div>
+      </div>
     </div>
     <div id="evol-side">
       <div class="ph2" style="margin-bottom:8px">Flux estimés</div>
@@ -692,6 +709,7 @@ function renderEvolSide(res,thresh){
   document.getElementById('ev-flows').innerHTML=html||'<div style="color:var(--tm);font-size:11px">Aucun flux au-dessus du seuil.</div>';
 }
 
+function toggleInfoPop(e){e.stopPropagation();const pop=document.getElementById('sk-info-pop');const wasVis=pop.classList.contains('vis');pop.classList.toggle('vis');if(!wasVis){const close=ev=>{if(!pop.contains(ev.target)&&ev.target.id!=='sk-info-btn'){pop.classList.remove('vis');document.removeEventListener('click',close);}};setTimeout(()=>document.addEventListener('click',close),10);}}
 function showTip(e,html){const t=document.getElementById('sk-tip');t.innerHTML=html;t.style.display='block';moveTip(e);}
 function moveTip(e){const t=document.getElementById('sk-tip'),w=document.getElementById('sk-wrap'),r=w.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top-10;if(x+240>r.width)x=e.clientX-r.left-240;if(y+90>r.height)y=e.clientY-r.top-90;t.style.left=x+'px';t.style.top=y+'px';}
 function hideTip(){document.getElementById('sk-tip').style.display='none';}
