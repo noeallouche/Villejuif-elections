@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -333,388 +332,387 @@ let hlmByBV=new Map(),hlmLoaded=false,hlmTotalLogements=0,hlmReady=false;
 const HLM_COLOR='#f48fb1';
 
 /* ── utils ── */
-const fP=v=>v.toFixed(1).replace(’.’,’,’)+’ %’;
-const fN=v=>v.toLocaleString(‘fr-FR’);
-const esc=s=>String(s||’’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’);
-const ctxt=h=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(.299*r+.587*g+.114*b)>140?’#111’:’#fff’;};
+const fP=v=>v.toFixed(1).replace('.',',')+' %';
+const fN=v=>v.toLocaleString('fr-FR');
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ctxt=h=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(.299*r+.587*g+.114*b)>140?'#111':'#fff';};
 const blend=(h,t)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.round(30+(r-30)*t)},${Math.round(30+(g-30)*t)},${Math.round(35+(b-35)*t)})`;};
 function pearson(xs,ys){const n=xs.length;if(n<3)return 0;let sx=0,sy=0,sxy=0,sx2=0,sy2=0;for(let i=0;i<n;i++){sx+=xs[i];sy+=ys[i];sxy+=xs[i]*ys[i];sx2+=xs[i]*xs[i];sy2+=ys[i]*ys[i];}const d=Math.sqrt((n*sx2-sx*sx)*(n*sy2-sy*sy));return d===0?0:(n*sxy-sx*sy)/d;}
 const EL=()=>ELECTIONS.find(e=>e.id===CUR_EID)||{};
 const cands=()=>EL().candidates||[];
 const cand=n=>cands().find(c=>c.nuance===n);
-const ccolor=n=>(cand(n)||{color:’#78909C’}).color;
+const ccolor=n=>(cand(n)||{color:'#78909C'}).color;
 const cname=n=>(cand(n)||{nom:n}).nom;
-const lieauOf=k=>{const f=GEO&&GEO.features.find(f=>f.properties.id_bv===String(k));return f?f.properties.lieu:’’;};
+const lieauOf=k=>{const f=GEO&&GEO.features.find(f=>f.properties.id_bv===String(k));return f?f.properties.lieu:'';};
 
 /* ── geometry ── */
 function pointInPolygon(pt,poly){const[px,py]=pt;let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
-function pointInFeature(pt,feat){const g=feat.geometry;if(!g)return false;const rings=g.type===‘Polygon’?g.coordinates:g.type===‘MultiPolygon’?g.coordinates.reduce((a,p)=>a.concat(p),[]):[];return rings.some(r=>pointInPolygon(pt,r));}
+function pointInFeature(pt,feat){const g=feat.geometry;if(!g)return false;const rings=g.type==='Polygon'?g.coordinates:g.type==='MultiPolygon'?g.coordinates.reduce((a,p)=>a.concat(p),[]):[];return rings.some(r=>pointInPolygon(pt,r));}
 
 /* ── Lambert93→WGS84 ── */
 function l93wgs(x,y){const a=6378137,e=0.0818191910428,lc=3*Math.PI/180,p1=44*Math.PI/180,p2=49*Math.PI/180,p0=46.5*Math.PI/180,x0=700000,y0=6600000;const mF=p=>Math.cos(p)/Math.sqrt(1-e*e*Math.sin(p)*Math.sin(p)),tF=p=>Math.tan(Math.PI/4-p/2)/Math.pow((1-e*Math.sin(p))/(1+e*Math.sin(p)),e/2);const t1=tF(p1),t2=tF(p2),t0=tF(p0),m1=mF(p1),m2=mF(p2);const n=Math.log(m1/m2)/Math.log(t1/t2),F=m1/(n*Math.pow(t1,n)),r0=a*F*Math.pow(t0,n);const dx=x-x0,dy=y-y0,r=Math.sqrt(dx*dx+(r0-dy)*(r0-dy)),tp=Math.pow(r/(a*F),1/n),th=Math.atan2(dx,r0-dy);let phi=Math.PI/2-2*Math.atan(tp);for(let i=0;i<10;i++){const prev=phi;phi=Math.PI/2-2*Math.atan(tp*Math.pow((1-e*Math.sin(phi))/(1+e*Math.sin(phi)),e/2));if(Math.abs(phi-prev)<1e-11)break;}return{lat:phi*180/Math.PI,lng:(lc+th/n)*180/Math.PI};}
 
 /* ── parsing ── */
-function parseDel(text){const lines=text.trim().split(’\n’).filter(l=>l.trim());if(!lines.length)return[];const sep=lines[0].split(’;’).length>lines[0].split(’,’).length?’;’:’,’;const hdrs=lines[0].split(sep).map(h=>h.trim().replace(/^”|”$/g,’’));return lines.slice(1).map(line=>{const vals=line.split(sep),row={};hdrs.forEach((h,i)=>row[h]=(vals[i]||’’).trim().replace(/^”|”$/g,’’));return row;});}
-function rplsCol(row,…names){for(const n of names){if(row[n]!==undefined&&row[n]!==’’)return row[n];const k=Object.keys(row).find(k=>k.toLowerCase()===n.toLowerCase());if(k&&row[k]!==’’)return row[k];}return’’;}
-function parseCSV(text){const lines=text.trim().split(’\n’).filter(l=>!l.startsWith(’#’)&&l.trim());const hdrs=lines[0].split(’,’).map(h=>h.trim());return lines.slice(1).map(l=>{const vals=l.split(’,’),obj={};hdrs.forEach((h,i)=>obj[h]=vals[i]?vals[i].trim():‘0’);[‘ins’,‘vot’,‘exp’,‘bl’,‘nu’].forEach(k=>obj[k]=parseInt(obj[k])||0);hdrs.slice(5).forEach(h=>obj[h]=parseInt(obj[h])||0);return obj;});}
+function parseDel(text){const lines=text.trim().split('\n').filter(l=>l.trim());if(!lines.length)return[];const sep=lines[0].split(';').length>lines[0].split(',').length?';':',';const hdrs=lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,''));return lines.slice(1).map(line=>{const vals=line.split(sep),row={};hdrs.forEach((h,i)=>row[h]=(vals[i]||'').trim().replace(/^"|"$/g,''));return row;});}
+function rplsCol(row,...names){for(const n of names){if(row[n]!==undefined&&row[n]!=='')return row[n];const k=Object.keys(row).find(k=>k.toLowerCase()===n.toLowerCase());if(k&&row[k]!=='')return row[k];}return'';}
+function parseCSV(text){const lines=text.trim().split('\n').filter(l=>!l.startsWith('#')&&l.trim());const hdrs=lines[0].split(',').map(h=>h.trim());return lines.slice(1).map(l=>{const vals=l.split(','),obj={};hdrs.forEach((h,i)=>obj[h]=vals[i]?vals[i].trim():'0');['ins','vot','exp','bl','nu'].forEach(k=>obj[k]=parseInt(obj[k])||0);hdrs.slice(5).forEach(h=>obj[h]=parseInt(obj[h])||0);return obj;});}
 
 /* ── RPLS ── */
-async function loadRPLS(){const sel=document.getElementById(‘hlm-status’);if(sel)sel.textContent=’(chargement…)’;try{const res=await fetch(RPLS_LOCAL+’?v=’+Date.now());if(!res.ok)throw 0;processRPLS(parseDel(await res.text()));}catch(e){hlmLoaded=false;hlmReady=false;if(sel)sel.textContent=’(indisponible)’;}}
-function processRPLS(data){hlmByBV.clear();hlmTotalLogements=0;const pts=[];(data||[]).forEach(row=>{if((rplsCol(row,‘DEPCOM’,‘depcom’)||’’)!==COM_INSEE)return;const x=parseFloat(rplsCol(row,‘X’,‘x’)||’’),y=parseFloat(rplsCol(row,‘Y’,‘y’)||’’);if(isNaN(x)||isNaN(y)||!x||!y)return;const w=l93wgs(x,y);pts.push({lng:w.lng,lat:w.lat,loyer:parseFloat(rplsCol(row,‘LOCAT’,‘locat’)||0)||0});});hlmTotalLogements=pts.length;if(GEO&&GEO.features&&pts.length){const cnt=new Map(),ls=new Map(),ln=new Map();pts.forEach(pt=>{for(const f of GEO.features){if(pointInFeature([pt.lng,pt.lat],f)){const id=String(f.properties.id_bv);cnt.set(id,(cnt.get(id)||0)+1);if(pt.loyer>0){ls.set(id,(ls.get(id)||0)+pt.loyer);ln.set(id,(ln.get(id)||0)+1);}break;}}});cnt.forEach((c,id)=>{const n=ln.get(id)||0;hlmByBV.set(id,{count:c,pct:hlmTotalLogements>0?c/hlmTotalLogements*100:0,loyer:n>0?ls.get(id)/n:0});});hlmReady=hlmByBV.size>0;}else hlmReady=false;hlmLoaded=true;const sel=document.getElementById(‘hlm-status’);if(sel)sel.textContent=hlmReady?`(${fN(hlmTotalLogements)} lgts · ${hlmByBV.size} BV · point-in-poly)`:’(aucun logement géolocalisé)’;if(typeof updateColors===‘function’)updateColors();if(typeof updateHLMLegend===‘function’)updateHLMLegend();}
+async function loadRPLS(){const sel=document.getElementById('hlm-status');if(sel)sel.textContent='(chargement…)';try{const res=await fetch(RPLS_LOCAL+'?v='+Date.now());if(!res.ok)throw 0;processRPLS(parseDel(await res.text()));}catch(e){hlmLoaded=false;hlmReady=false;if(sel)sel.textContent='(indisponible)';}}
+function processRPLS(data){hlmByBV.clear();hlmTotalLogements=0;const pts=[];(data||[]).forEach(row=>{if((rplsCol(row,'DEPCOM','depcom')||'')!==COM_INSEE)return;const x=parseFloat(rplsCol(row,'X','x')||''),y=parseFloat(rplsCol(row,'Y','y')||'');if(isNaN(x)||isNaN(y)||!x||!y)return;const w=l93wgs(x,y);pts.push({lng:w.lng,lat:w.lat,loyer:parseFloat(rplsCol(row,'LOCAT','locat')||0)||0});});hlmTotalLogements=pts.length;if(GEO&&GEO.features&&pts.length){const cnt=new Map(),ls=new Map(),ln=new Map();pts.forEach(pt=>{for(const f of GEO.features){if(pointInFeature([pt.lng,pt.lat],f)){const id=String(f.properties.id_bv);cnt.set(id,(cnt.get(id)||0)+1);if(pt.loyer>0){ls.set(id,(ls.get(id)||0)+pt.loyer);ln.set(id,(ln.get(id)||0)+1);}break;}}});cnt.forEach((c,id)=>{const n=ln.get(id)||0;hlmByBV.set(id,{count:c,pct:hlmTotalLogements>0?c/hlmTotalLogements*100:0,loyer:n>0?ls.get(id)/n:0});});hlmReady=hlmByBV.size>0;}else hlmReady=false;hlmLoaded=true;const sel=document.getElementById('hlm-status');if(sel)sel.textContent=hlmReady?`(${fN(hlmTotalLogements)} lgts · ${hlmByBV.size} BV · point-in-poly)`:'(aucun logement géolocalisé)';if(typeof updateColors==='function')updateColors();if(typeof updateHLMLegend==='function')updateHLMLegend();}
 function hlmForBV(k){return hlmByBV.get(String(k))||null;}
 function hlmPctForBV(k){const h=hlmForBV(k);return h?h.pct:0;}
-function addHLMLayer(){if(!map||!map.loaded()||!hlmByBV.size)return;const features=[];GEO&&GEO.features.forEach(feat=>{const id=String(feat.properties.id_bv),h=hlmForBV(id);if(!h||!h.count)return;const c=getFeatureCenter(id);if(!c)return;features.push({type:‘Feature’,id:features.length,geometry:{type:‘Point’,coordinates:c},properties:{nb:h.count,bv:id}});});if(!features.length)return;const gj={type:‘FeatureCollection’,features};if(map.getSource(‘hlm’))map.getSource(‘hlm’).setData(gj);else{map.addSource(‘hlm’,{type:‘geojson’,data:gj});map.addLayer({id:‘hlm-halo’,type:‘circle’,source:‘hlm’,paint:{‘circle-radius’:[‘interpolate’,[‘linear’],[‘get’,‘nb’],1,8,50,14,200,22,500,34],‘circle-color’:HLM_COLOR,‘circle-opacity’:0.12,‘circle-stroke-width’:0}});map.addLayer({id:‘hlm-circle’,type:‘circle’,source:‘hlm’,paint:{‘circle-radius’:[‘interpolate’,[‘linear’],[‘get’,‘nb’],1,4,50,9,200,14,500,22],‘circle-color’:HLM_COLOR,‘circle-opacity’:0.82,‘circle-stroke-color’:‘rgba(255,255,255,0.4)’,‘circle-stroke-width’:0.8}});map.on(‘mouseenter’,‘hlm-circle’,e=>{map.getCanvas().style.cursor=‘pointer’;if(!e.features.length)return;const p=e.features[0].properties;popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(`<div class="tt-t">Logements sociaux BV ${parseInt(p.bv).toString().padStart(2,'0')}</div><div style="font-size:12px;margin-top:4px"><strong style="color:${HLM_COLOR}">${fN(p.nb)}</strong> <span style="color:var(--tm)">logement${p.nb>1?'s':''}</span></div><div style="font-size:10px;color:var(--tm);margin-top:2px">${fP(hlmPctForBV(p.bv))} du parc communal</div>`).addTo(map);});map.on(‘mouseleave’,‘hlm-circle’,()=>{map.getCanvas().style.cursor=’’;if(popup&&!popup._panelSource)popup.remove();});}setHLMLayerVisibility(mode===‘hlm’);}
-function setHLMLayerVisibility(v){if(!map||!map.getSource(‘hlm’))return;const vis=v?‘visible’:‘none’;if(map.getLayer(‘hlm-halo’))map.setLayoutProperty(‘hlm-halo’,‘visibility’,vis);if(map.getLayer(‘hlm-circle’))map.setLayoutProperty(‘hlm-circle’,‘visibility’,vis);}
-function updateHLMLegend(){const el=document.getElementById(‘hleg-stats’);if(!el)return;if(hlmReady&&hlmByBV.size){const mx=[…hlmByBV.values()].reduce((m,v)=>Math.max(m,v.count),0);el.innerHTML=`<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br><strong style="color:#fff">${hlmByBV.size}</strong> bureaux concernés<br>max : <strong style="color:${HLM_COLOR}">${fN(mx)}</strong> lgts dans un BV`;}else if(hlmLoaded)el.innerHTML=`<span style="color:var(--tm)">Aucun logement géolocalisé dans les BV</span>`;else el.innerHTML=`<span style="color:var(--tm)">Données RPLS non disponibles</span>`;}
+function addHLMLayer(){if(!map||!map.loaded()||!hlmByBV.size)return;const features=[];GEO&&GEO.features.forEach(feat=>{const id=String(feat.properties.id_bv),h=hlmForBV(id);if(!h||!h.count)return;const c=getFeatureCenter(id);if(!c)return;features.push({type:'Feature',id:features.length,geometry:{type:'Point',coordinates:c},properties:{nb:h.count,bv:id}});});if(!features.length)return;const gj={type:'FeatureCollection',features};if(map.getSource('hlm'))map.getSource('hlm').setData(gj);else{map.addSource('hlm',{type:'geojson',data:gj});map.addLayer({id:'hlm-halo',type:'circle',source:'hlm',paint:{'circle-radius':['interpolate',['linear'],['get','nb'],1,8,50,14,200,22,500,34],'circle-color':HLM_COLOR,'circle-opacity':0.12,'circle-stroke-width':0}});map.addLayer({id:'hlm-circle',type:'circle',source:'hlm',paint:{'circle-radius':['interpolate',['linear'],['get','nb'],1,4,50,9,200,14,500,22],'circle-color':HLM_COLOR,'circle-opacity':0.82,'circle-stroke-color':'rgba(255,255,255,0.4)','circle-stroke-width':0.8}});map.on('mouseenter','hlm-circle',e=>{map.getCanvas().style.cursor='pointer';if(!e.features.length)return;const p=e.features[0].properties;popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(`<div class="tt-t">Logements sociaux BV ${parseInt(p.bv).toString().padStart(2,'0')}</div><div style="font-size:12px;margin-top:4px"><strong style="color:${HLM_COLOR}">${fN(p.nb)}</strong> <span style="color:var(--tm)">logement${p.nb>1?'s':''}</span></div><div style="font-size:10px;color:var(--tm);margin-top:2px">${fP(hlmPctForBV(p.bv))} du parc communal</div>`).addTo(map);});map.on('mouseleave','hlm-circle',()=>{map.getCanvas().style.cursor='';if(popup&&!popup._panelSource)popup.remove();});}setHLMLayerVisibility(mode==='hlm');}
+function setHLMLayerVisibility(v){if(!map||!map.getSource('hlm'))return;const vis=v?'visible':'none';if(map.getLayer('hlm-halo'))map.setLayoutProperty('hlm-halo','visibility',vis);if(map.getLayer('hlm-circle'))map.setLayoutProperty('hlm-circle','visibility',vis);}
+function updateHLMLegend(){const el=document.getElementById('hleg-stats');if(!el)return;if(hlmReady&&hlmByBV.size){const mx=[...hlmByBV.values()].reduce((m,v)=>Math.max(m,v.count),0);el.innerHTML=`<strong style="color:#fff">${fN(hlmTotalLogements)}</strong> logements sociaux<br><strong style="color:#fff">${hlmByBV.size}</strong> bureaux concernés<br>max : <strong style="color:${HLM_COLOR}">${fN(mx)}</strong> lgts dans un BV`;}else if(hlmLoaded)el.innerHTML=`<span style="color:var(--tm)">Aucun logement géolocalisé dans les BV</span>`;else el.innerHTML=`<span style="color:var(--tm)">Données RPLS non disponibles</span>`;}
 
 /* ── CSV cache ── */
 async function loadCSVById(eid){if(DATA_CACHE.has(eid))return DATA_CACHE.get(eid);try{const res=await fetch(`${DATA_BASE}${eid}.csv?v=`+Date.now());if(!res.ok)throw 0;const d=parseCSV(await res.text());DATA_CACHE.set(eid,d);return d;}catch(e){return[];}}
 async function loadCSV(eid){CUR_DATA=await loadCSVById(eid);}
 
 /* ── BV compute ── */
-function computeBV(row){const cs=cands();let lists=cs.filter(c=>!excl.has(c.nuance)).map(c=>({nuance:c.nuance,nom:c.nom,color:c.color,bloc:c.bloc,voix:parseInt(row[c.nuance])||0,pct:0}));const exp=lists.reduce((s,l)=>s+l.voix,0);lists.forEach(l=>l.pct=exp>0?l.voix/exp*100:0);lists.sort((a,b)=>b.voix-a.voix);const winner=lists[0]||null;let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;lists.forEach(l=>{if(l.bloc===‘gauche_rad’)gr+=l.voix;else if(l.bloc===‘gauche’)g+=l.voix;else if(l.bloc===‘centre’)cen+=l.voix;else if(l.bloc===‘droite’)dr+=l.voix;else if(l.bloc===‘ex_gauche’)exg+=l.voix;else if(l.bloc===‘ex_droite’)exd+=l.voix;else au+=l.voix;});const part=row.ins>0?row.vot/row.ins*100:0;let sq=0;if(exp>0)lists.forEach(l=>{const p=l.voix/exp;sq+=p*p;});return{key:row.bv,lieu:row.lieu||lieauOf(row.bv),inscrits:row.ins,votants:row.vot,exprimes:exp,blancs:row.bl,nuls:row.nu,participation:part,lists,winner,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au,enp:sq>0?1/sq:1};}
-function agg(){if(!CUR_DATA)return{inscrits:0,votants:0,exprimes:0,blancs:0,nuls:0,participation:0,lists:[],voixGR:0,voixG:0,voixCen:0,voixDr:0,voixEXG:0,voixEXD:0,voixAu:0};let ins=0,vot=0,exp=0,bl=0,nu=0;const vm={};CUR_DATA.forEach(row=>{const bv=computeBV(row);ins+=bv.inscrits;vot+=bv.votants;exp+=bv.exprimes;bl+=bv.blancs;nu+=bv.nuls;bv.lists.forEach(l=>vm[l.nuance]=(vm[l.nuance]||0)+l.voix);});const lists=Object.entries(vm).map(([nuance,voix])=>({nuance,voix,nom:cname(nuance),color:ccolor(nuance),pct:exp>0?voix/exp*100:0,bloc:(cand(nuance)||{bloc:‘autre’}).bloc})).sort((a,b)=>b.voix-a.voix);const part=ins>0?vot/ins*100:0;let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;lists.forEach(l=>{if(l.bloc===‘gauche_rad’)gr+=l.voix;else if(l.bloc===‘gauche’)g+=l.voix;else if(l.bloc===‘centre’)cen+=l.voix;else if(l.bloc===‘droite’)dr+=l.voix;else if(l.bloc===‘ex_gauche’)exg+=l.voix;else if(l.bloc===‘ex_droite’)exd+=l.voix;else au+=l.voix;});return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au};}
+function computeBV(row){const cs=cands();let lists=cs.filter(c=>!excl.has(c.nuance)).map(c=>({nuance:c.nuance,nom:c.nom,color:c.color,bloc:c.bloc,voix:parseInt(row[c.nuance])||0,pct:0}));const exp=lists.reduce((s,l)=>s+l.voix,0);lists.forEach(l=>l.pct=exp>0?l.voix/exp*100:0);lists.sort((a,b)=>b.voix-a.voix);const winner=lists[0]||null;let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else if(l.bloc==='ex_gauche')exg+=l.voix;else if(l.bloc==='ex_droite')exd+=l.voix;else au+=l.voix;});const part=row.ins>0?row.vot/row.ins*100:0;let sq=0;if(exp>0)lists.forEach(l=>{const p=l.voix/exp;sq+=p*p;});return{key:row.bv,lieu:row.lieu||lieauOf(row.bv),inscrits:row.ins,votants:row.vot,exprimes:exp,blancs:row.bl,nuls:row.nu,participation:part,lists,winner,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au,enp:sq>0?1/sq:1};}
+function agg(){if(!CUR_DATA)return{inscrits:0,votants:0,exprimes:0,blancs:0,nuls:0,participation:0,lists:[],voixGR:0,voixG:0,voixCen:0,voixDr:0,voixEXG:0,voixEXD:0,voixAu:0};let ins=0,vot=0,exp=0,bl=0,nu=0;const vm={};CUR_DATA.forEach(row=>{const bv=computeBV(row);ins+=bv.inscrits;vot+=bv.votants;exp+=bv.exprimes;bl+=bv.blancs;nu+=bv.nuls;bv.lists.forEach(l=>vm[l.nuance]=(vm[l.nuance]||0)+l.voix);});const lists=Object.entries(vm).map(([nuance,voix])=>({nuance,voix,nom:cname(nuance),color:ccolor(nuance),pct:exp>0?voix/exp*100:0,bloc:(cand(nuance)||{bloc:'autre'}).bloc})).sort((a,b)=>b.voix-a.voix);const part=ins>0?vot/ins*100:0;let gr=0,g=0,cen=0,dr=0,exg=0,exd=0,au=0;lists.forEach(l=>{if(l.bloc==='gauche_rad')gr+=l.voix;else if(l.bloc==='gauche')g+=l.voix;else if(l.bloc==='centre')cen+=l.voix;else if(l.bloc==='droite')dr+=l.voix;else if(l.bloc==='ex_gauche')exg+=l.voix;else if(l.bloc==='ex_droite')exd+=l.voix;else au+=l.voix;});return{inscrits:ins,votants:vot,exprimes:exp,blancs:bl,nuls:nu,participation:part,lists,voixGR:gr,voixG:g,voixCen:cen,voixDr:dr,voixEXG:exg,voixEXD:exd,voixAu:au};}
 function animCount(el,target){const start=performance.now(),dur=600;const tick=now=>{const p=Math.min((now-start)/dur,1),ease=1-Math.pow(1-p,3);el.textContent=fN(Math.round(target*ease));if(p<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);}
-function rKPIs(el,d){const p=d.inscrits>0?d.votants/d.inscrits*100:0;el.innerHTML=`<div class="kc"><div class="kv" id="kv-ins">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;const i=el.querySelector(’#kv-ins’);if(i&&d.inscrits>0)animCount(i,d.inscrits);}
-function rBal(el,d){const T=d.exprimes||1;const segs=[[d.voixEXG/T*100,’#7B1FA2’,‘Ext. gauche’],[d.voixGR/T*100,’#C62828’,‘G. rad.’],[d.voixG/T*100,’#EC407A’,‘Gauche’],[d.voixCen/T*100,’#FF8F00’,‘Centre’],[d.voixDr/T*100,’#1565C0’,‘Droite’],[d.voixEXD/T*100,’#1A237E’,‘Ext. droite’],[d.voixAu/T*100,’#78909C’,‘Autres’]].filter(s=>s[0]>0.5);el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Équilibre politique</div><div class="bb">${segs.map(s=>`<div style="width:${s[0]}%;background:${s[1]}" title="${s[2]} ${fP(s[0])}"></div>`).join('')}</div><div class="bbl">${segs.map(s=>`<span style="color:${s[1]}">${s[2]} ${fP(s[0])}</span>`).join('')}</div>`;}
-function rBars(el,lists,exp,anim=true,click=false){let h=’’;lists.forEach((l,i)=>{const pct=exp>0?l.voix/exp*100:0,col=l.color||ccolor(l.nuance),an=anim?`style="animation-delay:${i*.03}s"`:’’,cl=click?`class="rb ck" onclick="openCP('${esc(l.nuance)}')" title="Fiche ${esc(l.nom)}"`:` class="rb"`;h+=`<div ${cl} ${an}><span class="nbdg" style="color:${col};opacity:.7">${esc(l.nuance)}</span><span class="rn" style="color:${col};font-weight:600">${esc(l.nom)}</span><span class="rp">${fP(pct)}</span><span class="rv">${fN(l.voix)}</span><div class="rt"><div class="rf" style="width:${pct}%;background:${col}"></div></div></div>`;});el.innerHTML=h||’<div style="color:var(--tm);font-size:11px;padding:8px 0">Aucune liste.</div>’;}
-function renderGlobal(){const el=EL(),a=agg();document.getElementById(‘p-title’).textContent=`Résultats — ${el.label||''}`;document.getElementById(‘ft’).textContent=`${el.label||''} · ${el.date||''} · 34 bureaux · ${fN(el.inscrits||0)} inscrits`;rKPIs(document.getElementById(‘g-k’),a);rBal(document.getElementById(‘g-b’),a);rBars(document.getElementById(‘g-r’),a.lists,a.exprimes,true,true);const hDiv=document.getElementById(‘g-hemicycle’);if(hDiv){if(CUR_EID===‘MUN26T2’){hDiv.style.display=’’;renderHemicycle(hDiv);}else hDiv.style.display=‘none’;}}
-function getFeatureCenter(key){if(!GEO)return null;const feat=GEO.features.find(f=>f.properties.id_bv===String(key));if(!feat)return null;const coords=feat.geometry.type===‘Polygon’?feat.geometry.coordinates[0]:feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);if(!coords||!coords.length)return null;let sl=0,sa=0;coords.forEach(([lg,lt])=>{sl+=lg;sa+=lt;});return[sl/coords.length,sa/coords.length];}
+function rKPIs(el,d){const p=d.inscrits>0?d.votants/d.inscrits*100:0;el.innerHTML=`<div class="kc"><div class="kv" id="kv-ins">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;const i=el.querySelector('#kv-ins');if(i&&d.inscrits>0)animCount(i,d.inscrits);}
+function rBal(el,d){const T=d.exprimes||1;const segs=[[d.voixEXG/T*100,'#7B1FA2','Ext. gauche'],[d.voixGR/T*100,'#C62828','G. rad.'],[d.voixG/T*100,'#EC407A','Gauche'],[d.voixCen/T*100,'#FF8F00','Centre'],[d.voixDr/T*100,'#1565C0','Droite'],[d.voixEXD/T*100,'#1A237E','Ext. droite'],[d.voixAu/T*100,'#78909C','Autres']].filter(s=>s[0]>0.5);el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Équilibre politique</div><div class="bb">${segs.map(s=>`<div style="width:${s[0]}%;background:${s[1]}" title="${s[2]} ${fP(s[0])}"></div>`).join('')}</div><div class="bbl">${segs.map(s=>`<span style="color:${s[1]}">${s[2]} ${fP(s[0])}</span>`).join('')}</div>`;}
+function rBars(el,lists,exp,anim=true,click=false){let h='';lists.forEach((l,i)=>{const pct=exp>0?l.voix/exp*100:0,col=l.color||ccolor(l.nuance),an=anim?`style="animation-delay:${i*.03}s"`:'',cl=click?`class="rb ck" onclick="openCP('${esc(l.nuance)}')" title="Fiche ${esc(l.nom)}"`:` class="rb"`;h+=`<div ${cl} ${an}><span class="nbdg" style="color:${col};opacity:.7">${esc(l.nuance)}</span><span class="rn" style="color:${col};font-weight:600">${esc(l.nom)}</span><span class="rp">${fP(pct)}</span><span class="rv">${fN(l.voix)}</span><div class="rt"><div class="rf" style="width:${pct}%;background:${col}"></div></div></div>`;});el.innerHTML=h||'<div style="color:var(--tm);font-size:11px;padding:8px 0">Aucune liste.</div>';}
+function renderGlobal(){const el=EL(),a=agg();document.getElementById('p-title').textContent=`Résultats \u2014 ${el.label||''}`;document.getElementById('ft').textContent=`${el.label||''} · ${el.date||''} · 34 bureaux · ${fN(el.inscrits||0)} inscrits`;rKPIs(document.getElementById('g-k'),a);rBal(document.getElementById('g-b'),a);rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);const hDiv=document.getElementById('g-hemicycle');if(hDiv){if(CUR_EID==='MUN26T2'){hDiv.style.display='';renderHemicycle(hDiv);}else hDiv.style.display='none';}}
+function getFeatureCenter(key){if(!GEO)return null;const feat=GEO.features.find(f=>f.properties.id_bv===String(key));if(!feat)return null;const coords=feat.geometry.type==='Polygon'?feat.geometry.coordinates[0]:feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);if(!coords||!coords.length)return null;let sl=0,sa=0;coords.forEach(([lg,lt])=>{sl+=lg;sa+=lt;});return[sl/coords.length,sa/coords.length];}
 function zoomToBV(key){if(!map||!GEO)return;const c=getFeatureCenter(key);if(!c)return;map.flyTo({center:c,zoom:Math.max(map.getZoom(),15.5),duration:800,essential:true});}
-function panelHover(key){if(!map||!map.getSource(‘bv’))return;if(panelHovId!==null){map.setFeatureState({source:‘bv’,id:panelHovId},{hover:false});panelHovId=null;}if(key===null){if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}return;}if(GEO){const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));if(idx>=0){panelHovId=idx;map.setFeatureState({source:‘bv’,id:panelHovId},{hover:true});}}const c=getFeatureCenter(key);if(c&&popup){popup._panelSource=true;popup.setLngLat(c).setHTML(buildTT(key)).addTo(map);}}
-function renderBVGrid(){const g=document.getElementById(‘bvg’);if(!CUR_DATA){g.innerHTML=’’;return;}let h=’’;CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach(row=>{const bv=computeBV(row),w=bv.winner,col=w?w.color:’#555’;const sp=bv.lists.slice(0,5).map(l=>`<div style="flex:${bv.exprimes>0?l.voix/bv.exprimes*100:0}%;background:${l.color};height:100%"></div>`).join(’’);const hlm=hlmForBV(row.bv);const badge=hlm&&hlm.count>0?`<span style="font-size:8px;color:${HLM_COLOR};margin-left:2px" title="${fN(hlm.count)} lgts sociaux">⬤${hlm.count}</span>`:’’;h+=`<div class="bvc" data-bv="${row.bv}" onclick="showBV('${row.bv}')" onmouseenter="panelHover('${row.bv}')" onmouseleave="panelHover(null)"><div class="bvcn" style="display:flex;align-items:center;gap:4px">Bureau ${parseInt(row.bv).toString().padStart(2,'0')}${badge}</div><div class="bvcw"><div class="bvcd" style="background:${col}"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;color:rgba(255,255,255,.55)">${w?esc(w.nom.split(' ').slice(-1)[0]):'-'}</span><span class="bvcp" style="color:${col}">${w?fP(w.pct):'-'}</span></div><div class="spark">${sp}</div></div>`;});g.innerHTML=h;}
-function buildFC(){const a=agg();let h=’’;a.lists.forEach(l=>{const checked=excl.has(l.nuance)?’’:‘checked’,ex=excl.has(l.nuance)?‘excl’:’’;h+=`<label class="fi ${ex}" data-n="${esc(l.nuance)}"><input type="checkbox" ${checked} style="accent-color:${l.color}" onchange="onFC('${esc(l.nuance)}',this.checked)"><div class="fd" style="background:${l.color}"></div><span class="fn">${esc(l.nom)}</span><span class="nbdg" style="color:${l.color};opacity:.45">${esc(l.nuance)}</span><span class="fp" data-fp="${esc(l.nuance)}">${fP(l.pct)}</span></label>`;});document.getElementById(‘fc’).innerHTML=h;rSimResults();}
-function onFC(n,v){if(v)excl.delete(n);else excl.add(n);document.querySelector(`.fi[data-n="${n}"]`)?.classList.toggle(‘excl’,!v);recalc();}
-function resetF(){excl.clear();document.querySelectorAll(’#fc input’).forEach(c=>c.checked=true);document.querySelectorAll(’.fi’).forEach(f=>f.classList.remove(‘excl’));recalc();}
-function recalc(){rSimResults();if(!curCand)updateColors();renderBVGrid();if(mode===‘winner’&&!curCand)renderWinLeg();const a=agg();a.lists.forEach(l=>{const e=document.querySelector(`[data-fp="${l.nuance}"]`);if(e)e.textContent=fP(l.pct);});excl.forEach(n=>{const e=document.querySelector(`[data-fp="${n}"]`);if(e)e.textContent=’–’;});}
-function rSimResults(){const a=agg();rKPIs(document.getElementById(‘s-k’),a);rBal(document.getElementById(‘s-b’),a);rBars(document.getElementById(‘s-r’),a.lists,a.exprimes);}
-function openCP(nuance){curCand=nuance;const c=cand(nuance)||{},col=c.color||’#78909C’,nm=cname(nuance),tc=ctxt(col);const keys=CUR_DATA||[];const gv=keys.reduce((s,r)=>s+(parseInt(r[nuance])||0),0),ge=keys.reduce((s,r)=>s+(r.exp||0),0),gp=ge>0?gv/ge*100:0;const scores=keys.map(r=>({key:r.bv,lieu:r.lieu||lieauOf(r.bv),v:parseInt(r[nuance])||0,pct:r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0})).sort((a,b)=>b.pct-a.pct);const mx=scores[0]?scores[0].pct:1;const corrs=cands().filter(x=>x.nuance!==nuance).map(o=>{const xs=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[o.nuance])||0)/r.exp*100:0);return{nuance:o.nuance,nom:o.nom,color:o.color,r:pearson(xs,ys)};}).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
-document.getElementById(‘cp-n’).innerHTML=`<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>${esc(nm)}<span class="cppill" style="background:${col};color:${tc}">${esc(nuance)}</span>`;
-document.getElementById(‘cp-m’).textContent=`${fN(gv)} voix · ${fP(gp)} des exprimés`;
+function panelHover(key){if(!map||!map.getSource('bv'))return;if(panelHovId!==null){map.setFeatureState({source:'bv',id:panelHovId},{hover:false});panelHovId=null;}if(key===null){if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}return;}if(GEO){const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));if(idx>=0){panelHovId=idx;map.setFeatureState({source:'bv',id:panelHovId},{hover:true});}}const c=getFeatureCenter(key);if(c&&popup){popup._panelSource=true;popup.setLngLat(c).setHTML(buildTT(key)).addTo(map);}}
+function renderBVGrid(){const g=document.getElementById('bvg');if(!CUR_DATA){g.innerHTML='';return;}let h='';CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach(row=>{const bv=computeBV(row),w=bv.winner,col=w?w.color:'#555';const sp=bv.lists.slice(0,5).map(l=>`<div style="flex:${bv.exprimes>0?l.voix/bv.exprimes*100:0}%;background:${l.color};height:100%"></div>`).join('');const hlm=hlmForBV(row.bv);const badge=hlm&&hlm.count>0?`<span style="font-size:8px;color:${HLM_COLOR};margin-left:2px" title="${fN(hlm.count)} lgts sociaux">⬤${hlm.count}</span>`:'';h+=`<div class="bvc" data-bv="${row.bv}" onclick="showBV('${row.bv}')" onmouseenter="panelHover('${row.bv}')" onmouseleave="panelHover(null)"><div class="bvcn" style="display:flex;align-items:center;gap:4px">Bureau ${parseInt(row.bv).toString().padStart(2,'0')}${badge}</div><div class="bvcw"><div class="bvcd" style="background:${col}"></div><span style="font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75px;color:rgba(255,255,255,.55)">${w?esc(w.nom.split(' ').slice(-1)[0]):'-'}</span><span class="bvcp" style="color:${col}">${w?fP(w.pct):'-'}</span></div><div class="spark">${sp}</div></div>`;});g.innerHTML=h;}
+function buildFC(){const a=agg();let h='';a.lists.forEach(l=>{const checked=excl.has(l.nuance)?'':'checked',ex=excl.has(l.nuance)?'excl':'';h+=`<label class="fi ${ex}" data-n="${esc(l.nuance)}"><input type="checkbox" ${checked} style="accent-color:${l.color}" onchange="onFC('${esc(l.nuance)}',this.checked)"><div class="fd" style="background:${l.color}"></div><span class="fn">${esc(l.nom)}</span><span class="nbdg" style="color:${l.color};opacity:.45">${esc(l.nuance)}</span><span class="fp" data-fp="${esc(l.nuance)}">${fP(l.pct)}</span></label>`;});document.getElementById('fc').innerHTML=h;rSimResults();}
+function onFC(n,v){if(v)excl.delete(n);else excl.add(n);document.querySelector(`.fi[data-n="${n}"]`)?.classList.toggle('excl',!v);recalc();}
+function resetF(){excl.clear();document.querySelectorAll('#fc input').forEach(c=>c.checked=true);document.querySelectorAll('.fi').forEach(f=>f.classList.remove('excl'));recalc();}
+function recalc(){rSimResults();if(!curCand)updateColors();renderBVGrid();if(mode==='winner'&&!curCand)renderWinLeg();const a=agg();a.lists.forEach(l=>{const e=document.querySelector(`[data-fp="${l.nuance}"]`);if(e)e.textContent=fP(l.pct);});excl.forEach(n=>{const e=document.querySelector(`[data-fp="${n}"]`);if(e)e.textContent='--';});}
+function rSimResults(){const a=agg();rKPIs(document.getElementById('s-k'),a);rBal(document.getElementById('s-b'),a);rBars(document.getElementById('s-r'),a.lists,a.exprimes);}
+function openCP(nuance){curCand=nuance;const c=cand(nuance)||{},col=c.color||'#78909C',nm=cname(nuance),tc=ctxt(col);const keys=CUR_DATA||[];const gv=keys.reduce((s,r)=>s+(parseInt(r[nuance])||0),0),ge=keys.reduce((s,r)=>s+(r.exp||0),0),gp=ge>0?gv/ge*100:0;const scores=keys.map(r=>({key:r.bv,lieu:r.lieu||lieauOf(r.bv),v:parseInt(r[nuance])||0,pct:r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0})).sort((a,b)=>b.pct-a.pct);const mx=scores[0]?scores[0].pct:1;const corrs=cands().filter(x=>x.nuance!==nuance).map(o=>{const xs=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[o.nuance])||0)/r.exp*100:0);return{nuance:o.nuance,nom:o.nom,color:o.color,r:pearson(xs,ys)};}).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
+document.getElementById('cp-n').innerHTML=`<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>${esc(nm)}<span class="cppill" style="background:${col};color:${tc}">${esc(nuance)}</span>`;
+document.getElementById('cp-m').textContent=`${fN(gv)} voix · ${fP(gp)} des exprimés`;
 const best=scores[0],worst=scores[scores.length-1];
 let body=`<div class="cps"><div class="cpst">Chiffres clés</div><div class="kg"><div class="kc"><div class="kv" style="color:${col}">${fP(gp)}</div><div class="kl">Score global</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(best?best.pct:0)}</div><div class="kl">Meilleur BV</div></div><div class="kc"><div class="kv" style="color:${col}">${fP(worst?worst.pct:0)}</div><div class="kl">Moins bon BV</div></div></div></div>`;
 body+=`<div class="cps"><div class="cpst">Classement des 34 bureaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">Cliquez pour ouvrir · Survolez pour voir sur la carte</div>`;
-scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:‘rgba(255,255,255,.35)’;const hlm=hlmForBV(bv.key);const hlmTag=hlm&&hlm.count>0?`<span title="${fN(hlm.count)} lgts sociaux" style="font-size:8px;color:${HLM_COLOR};flex-shrink:0">⬤${hlm.count}</span>`:’’;body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span>${hlmTag}<span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
+scores.forEach((bv,i)=>{const fw=mx>0?bv.pct/mx*100:0,above=bv.pct>=gp,rc=above?col:'rgba(255,255,255,.35)';const hlm=hlmForBV(bv.key);const hlmTag=hlm&&hlm.count>0?`<span title="${fN(hlm.count)} lgts sociaux" style="font-size:8px;color:${HLM_COLOR};flex-shrink:0">⬤${hlm.count}</span>`:'';body+=`<div class="bvr" onclick="showBV('${bv.key}')" onmouseenter="panelHover('${bv.key}')" onmouseleave="panelHover(null)"><span class="bvr-i">${i+1}</span><span class="bvr-n">BV ${parseInt(bv.key).toString().padStart(2,'0')}</span><span class="bvr-l">${esc(bv.lieu)}</span>${hlmTag}<span class="bvr-p" style="color:${rc}">${fP(bv.pct)}</span><div class="bvr-b"><div class="bvr-f" style="width:${fw}%;background:${col};opacity:${above?.9:.35}"></div></div></div>`;});
 body+=`</div>`;
-if(corrs.length>0){body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?’#1565C0’:’#C62828’,left=cr.r>=0?50:50-abs*50,w=abs*50,tc2=ctxt(cr.color),str=abs<.2?‘très faible’:abs<.4?‘faible’:abs<.6?‘modérée’:abs<.8?‘forte’:‘très forte’;body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});body+=`</div>`;}
-if(hlmReady&&hlmByBV.size>0){const hlmX=keys.map(r=>hlmPctForBV(r.bv)),candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0),rv=pearson(hlmX,candY),abs=Math.abs(rv),fc=rv>=0?’#1565C0’:’#D32F2F’,left=rv>=0?50:50-abs*50,w=abs*50,sign=rv>=0?’+’:’’,str=abs<.2?‘très faible’:abs<.4?‘faible’:abs<.6?‘modérée’:abs<.8?‘forte’:‘très forte’;body+=`<div class="cps"><div class="cpst" style="color:${HLM_COLOR}">Corrélation logements sociaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">r de Pearson : % HLM par BV × score ${esc(nm)}</div><div class="cr"><div class="cl"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${HLM_COLOR};margin-right:4px;vertical-align:middle"></span>% Logements sociaux</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="cv" style="color:${fc}">${sign}${rv.toFixed(3)}</div><div class="cs">${str}</div></div></div>`;}
-document.getElementById(‘cp-b’).innerHTML=body;document.querySelectorAll(’.pane’).forEach(p=>{p.style.display=‘none’;p.classList.remove(‘active’);});document.getElementById(‘cp’).style.display=‘block’;document.getElementById(‘tc’).scrollTop=0;setCandMode(nuance,col,nm,mx,gp);}
-function closeCP(){curCand=null;document.getElementById(‘cp’).style.display=‘none’;const ns=[‘r’,‘b’,‘s’,‘c’],tabs=document.querySelectorAll(’.tab’);tabs.forEach((t,i)=>{if(t.classList.contains(‘active’)){const p=document.getElementById(‘pane-’+ns[i]);if(p){p.style.display=’’;p.classList.add(‘active’);}}});setMode(mode);}
-function setCandMode(nuance,col,nm,mx,avg){const e=[‘match’,[‘get’,‘id_bv’]];(CUR_DATA||[]).forEach(r=>{const v=parseInt(r[nuance])||0,t=r.exp>0&&mx>0?(v/r.exp*100)/mx:0;e.push(parseInt(r.bv),blend(col,t));});e.push(’#1e1e23’);if(map&&map.getSource(‘bv’))map.setPaintProperty(‘bv-fill’,‘fill-color’,e);document.getElementById(‘leg’).style.display=‘none’;document.getElementById(‘pleg’).style.display=‘none’;document.getElementById(‘hleg’).style.display=‘none’;const cl=document.getElementById(‘cleg’);cl.style.display=’’;document.getElementById(‘cl-t’).textContent=`${nm} — intensité`;document.getElementById(‘cl-t’).style.color=col;document.getElementById(‘cl-g’).style.background=`linear-gradient(to right,#1e1e23,${col})`;document.getElementById(‘cl-l’).innerHTML=`<span>0 %</span><span>${fP(avg)} moy.</span><span>${fP(mx)} max</span>`;}
-function showBV(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return;const bv=computeBV(row),hlm=hlmForBV(key);const hlmInfo=hlm&&hlm.count>0?`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px">⬤ ${fN(hlm.count)} lgts sociaux (${fP(hlm.pct)} commune)</span>`:’’;document.getElementById(‘bvd-t’).innerHTML=`Bureau ${parseInt(key).toString().padStart(2,'0')}${hlmInfo}`;document.getElementById(‘bvd-m’).innerHTML=`${bv.lieu?`<strong>${esc(bv.lieu)}</strong><br>`:''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;rKPIs(document.getElementById(‘bvd-k’),bv);rBal(document.getElementById(‘bvd-b’),bv);rBars(document.getElementById(‘bvd-r’),bv.lists,bv.exprimes,true,true);document.querySelectorAll(’.bvc’).forEach(c=>c.classList.toggle(‘active’,c.dataset.bv===String(key)));const d=document.getElementById(‘bvd’);d.style.display=‘block’;d.offsetHeight;d.classList.add(‘vis’);d.scrollTop=0;if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}zoomToBV(key);}
-function closeBV(){const d=document.getElementById(‘bvd’);d.classList.remove(‘vis’);setTimeout(()=>{if(!d.classList.contains(‘vis’))d.style.display=‘none’;},300);document.querySelectorAll(’.bvc’).forEach(c=>c.classList.remove(‘active’));zoomToCity();}
+if(corrs.length>0){body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?'#1565C0':'#C62828',left=cr.r>=0?50:50-abs*50,w=abs*50,tc2=ctxt(cr.color),str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});body+=`</div>`;}
+if(hlmReady&&hlmByBV.size>0){const hlmX=keys.map(r=>hlmPctForBV(r.bv)),candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0),rv=pearson(hlmX,candY),abs=Math.abs(rv),fc=rv>=0?'#1565C0':'#D32F2F',left=rv>=0?50:50-abs*50,w=abs*50,sign=rv>=0?'+':'',str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="cps"><div class="cpst" style="color:${HLM_COLOR}">Corrélation logements sociaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">r de Pearson : % HLM par BV × score ${esc(nm)}</div><div class="cr"><div class="cl"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${HLM_COLOR};margin-right:4px;vertical-align:middle"></span>% Logements sociaux</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="cv" style="color:${fc}">${sign}${rv.toFixed(3)}</div><div class="cs">${str}</div></div></div>`;}
+document.getElementById('cp-b').innerHTML=body;document.querySelectorAll('.pane').forEach(p=>{p.style.display='none';p.classList.remove('active');});document.getElementById('cp').style.display='block';document.getElementById('tc').scrollTop=0;setCandMode(nuance,col,nm,mx,gp);}
+function closeCP(){curCand=null;document.getElementById('cp').style.display='none';const ns=['r','b','s','c'],tabs=document.querySelectorAll('.tab');tabs.forEach((t,i)=>{if(t.classList.contains('active')){const p=document.getElementById('pane-'+ns[i]);if(p){p.style.display='';p.classList.add('active');}}});setMode(mode);}
+function setCandMode(nuance,col,nm,mx,avg){const e=['match',['get','id_bv']];(CUR_DATA||[]).forEach(r=>{const v=parseInt(r[nuance])||0,t=r.exp>0&&mx>0?(v/r.exp*100)/mx:0;e.push(parseInt(r.bv),blend(col,t));});e.push('#1e1e23');if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);document.getElementById('leg').style.display='none';document.getElementById('pleg').style.display='none';document.getElementById('hleg').style.display='none';const cl=document.getElementById('cleg');cl.style.display='';document.getElementById('cl-t').textContent=`${nm} \u2014 intensité`;document.getElementById('cl-t').style.color=col;document.getElementById('cl-g').style.background=`linear-gradient(to right,#1e1e23,${col})`;document.getElementById('cl-l').innerHTML=`<span>0 %</span><span>${fP(avg)} moy.</span><span>${fP(mx)} max</span>`;}
+function showBV(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return;const bv=computeBV(row),hlm=hlmForBV(key);const hlmInfo=hlm&&hlm.count>0?`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px">⬤ ${fN(hlm.count)} lgts sociaux (${fP(hlm.pct)} commune)</span>`:'';document.getElementById('bvd-t').innerHTML=`Bureau ${parseInt(key).toString().padStart(2,'0')}${hlmInfo}`;document.getElementById('bvd-m').innerHTML=`${bv.lieu?`<strong>${esc(bv.lieu)}</strong><br>`:''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}zoomToBV(key);}
+function closeBV(){const d=document.getElementById('bvd');d.classList.remove('vis');setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));zoomToCity();}
 function zoomToCity(){if(!map)return;map.flyTo({center:[2.362,48.793],zoom:13.3,duration:700,essential:true});}
-function sTab(name){if(curCand)closeCP();const ns=[‘r’,‘b’,‘s’,‘c’];document.querySelectorAll(’.tab’).forEach((t,i)=>t.classList.toggle(‘active’,ns[i]===name));document.querySelectorAll(’.pane’).forEach(p=>{p.classList.remove(‘active’);p.style.display=’’;});document.getElementById(‘pane-’+name).classList.add(‘active’);if(name===‘c’)renderCorr();}
-function bvColor(row,m){const bv=computeBV(row);if(m===‘winner’)return bv.winner?bv.winner.color:’#444’;if(m===‘participation’){const p=bv.participation,t=Math.max(0,Math.min(1,(p-35)/35));if(t<.33){const s=t/.33;return`rgb(${Math.round(187-s*87)},${Math.round(222-s*40)},255)`;}if(t<.66){const s=(t-.33)/.33;return`rgb(${Math.round(100-s*70)},${Math.round(182-s*71)},${Math.round(241-s*40)})`;}const s=(t-.66)/.34;return`rgb(${Math.round(30-s*17)},${Math.round(111-s*40)},${Math.round(201-s*40)})`;}if(m===‘gd’){const tg=bv.voixEXG+bv.voixGR+bv.voixG,td=bv.voixDr+bv.voixEXD,tot=tg+td;if(!tot)return’#444’;const r=tg/tot;if(r>=.5){const t=(r-.5)*2;return`rgb(255,${Math.round(255-t*219)},${Math.round(255-t*188)})`;}const t=(.5-r)*2;return`rgb(${Math.round(255-t*234)},${Math.round(255-t*154)},${Math.round(255-t*63)})`;}if(m===‘frag’){const t=Math.max(0,Math.min(1,(bv.enp-2)/5));return`rgb(${Math.round(t*156)},${Math.round(200-t*161)},${Math.round(83+t*79)})`;}if(m===‘hlm’){const h=hlmForBV(row.bv);if(!h||!h.count)return’#1e1e23’;const maxC=Math.max(…[…hlmByBV.values()].map(v=>v.count),1),t=Math.max(0,Math.min(1,h.count/maxC));return`rgba(244,143,177,${0.15+t*0.6})`;}return’#444’;}
-function buildColorExpr(){const e=[‘match’,[‘get’,‘id_bv’]];(CUR_DATA||[]).forEach(r=>e.push(parseInt(r.bv),bvColor(r,mode)));if(e.length<4)return’#444’;e.push(’#444’);return e;}
-function updateColors(){if(!map||!map.getSource(‘bv’))return;map.setPaintProperty(‘bv-fill’,‘fill-color’,buildColorExpr());}
+function sTab(name){if(curCand)closeCP();const ns=['r','b','s','c'];document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ns[i]===name));document.querySelectorAll('.pane').forEach(p=>{p.classList.remove('active');p.style.display='';});document.getElementById('pane-'+name).classList.add('active');if(name==='c')renderCorr();}
+function bvColor(row,m){const bv=computeBV(row);if(m==='winner')return bv.winner?bv.winner.color:'#444';if(m==='participation'){const p=bv.participation,t=Math.max(0,Math.min(1,(p-35)/35));if(t<.33){const s=t/.33;return`rgb(${Math.round(187-s*87)},${Math.round(222-s*40)},255)`;}if(t<.66){const s=(t-.33)/.33;return`rgb(${Math.round(100-s*70)},${Math.round(182-s*71)},${Math.round(241-s*40)})`;}const s=(t-.66)/.34;return`rgb(${Math.round(30-s*17)},${Math.round(111-s*40)},${Math.round(201-s*40)})`;}if(m==='gd'){const tg=bv.voixEXG+bv.voixGR+bv.voixG,td=bv.voixDr+bv.voixEXD,tot=tg+td;if(!tot)return'#444';const r=tg/tot;if(r>=.5){const t=(r-.5)*2;return`rgb(255,${Math.round(255-t*219)},${Math.round(255-t*188)})`;}const t=(.5-r)*2;return`rgb(${Math.round(255-t*234)},${Math.round(255-t*154)},${Math.round(255-t*63)})`;}if(m==='frag'){const t=Math.max(0,Math.min(1,(bv.enp-2)/5));return`rgb(${Math.round(t*156)},${Math.round(200-t*161)},${Math.round(83+t*79)})`;}if(m==='hlm'){const h=hlmForBV(row.bv);if(!h||!h.count)return'#1e1e23';const maxC=Math.max(...[...hlmByBV.values()].map(v=>v.count),1),t=Math.max(0,Math.min(1,h.count/maxC));return`rgba(244,143,177,${0.15+t*0.6})`;}return'#444';}
+function buildColorExpr(){const e=['match',['get','id_bv']];(CUR_DATA||[]).forEach(r=>e.push(parseInt(r.bv),bvColor(r,mode)));if(e.length<4)return'#444';e.push('#444');return e;}
+function updateColors(){if(!map||!map.getSource('bv'))return;map.setPaintProperty('bv-fill','fill-color',buildColorExpr());}
 function setMode(m){
-mode=m;if(curCand)closeCP();
-document.querySelectorAll(’.mbtn’).forEach(b=>b.classList.toggle(‘active’,b.dataset.mode===m));
-const ov=document.getElementById(‘evol-ov’);
-if(m===‘evol’){
-ov.classList.add(‘vis’);
-document.getElementById(‘panel’).style.display=‘none’;
-document.getElementById(‘map’).style.display=‘none’;
-document.getElementById(‘ft’).style.display=‘none’;
-[‘leg’,‘pleg’,‘cleg’,‘hleg’].forEach(id=>document.getElementById(id).style.display=‘none’);
-populateEvolSelects();renderEvol();return;
+  mode=m;if(curCand)closeCP();
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+  const ov=document.getElementById('evol-ov');
+  if(m==='evol'){
+    ov.classList.add('vis');
+    document.getElementById('panel').style.display='none';
+    document.getElementById('map').style.display='none';
+    document.getElementById('ft').style.display='none';
+    ['leg','pleg','cleg','hleg'].forEach(id=>document.getElementById(id).style.display='none');
+    populateEvolSelects();renderEvol();return;
+  }
+  ov.classList.remove('vis');
+  document.getElementById('panel').style.display='';
+  document.getElementById('map').style.display='';
+  document.getElementById('ft').style.display='';
+  ['leg','pleg','cleg','hleg'].forEach(id=>document.getElementById(id).style.display='none');
+  setHLMLayerVisibility(m==='hlm');
+  if(m==='winner')renderWinLeg();
+  else if(m==='participation'){const pl=document.getElementById('pleg');pl.style.display='';const avg=(EL().participation||0).toFixed(1).replace('.',',');document.getElementById('pl-t').textContent=`Participation \u2014 moy. ${avg} %`;document.getElementById('pl-g').style.background='linear-gradient(to right,#bbdefb,#64b5f6,#1e88e5,#0d47a1)';document.getElementById('pl-l').innerHTML='<span>35 %</span><span>52 %</span><span>70 %</span>';}
+  else if(m==='gd'){const lg=document.getElementById('leg');lg.style.display='';lg.innerHTML='<h4>Gauche / Droite</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#7B1FA2,#D32F2F,#fff,#1565C0,#1A237E)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Ext. G</span><span>Gauche</span><span>50/50</span><span>Droite</span><span>Ext. D</span></div>';}
+  else if(m==='frag'){const lg=document.getElementById('leg');lg.style.display='';lg.innerHTML='<h4>Fragmentation (ENP)</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#00C853,#9C27B0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Faible</span><span>Moyen</span><span>Élevé</span></div>';}
+  else if(m==='hlm'){document.getElementById('hleg').style.display='';updateHLMLegend();}
+  updateColors();
 }
-ov.classList.remove(‘vis’);
-document.getElementById(‘panel’).style.display=’’;
-document.getElementById(‘map’).style.display=’’;
-document.getElementById(‘ft’).style.display=’’;
-[‘leg’,‘pleg’,‘cleg’,‘hleg’].forEach(id=>document.getElementById(id).style.display=‘none’);
-setHLMLayerVisibility(m===‘hlm’);
-if(m===‘winner’)renderWinLeg();
-else if(m===‘participation’){const pl=document.getElementById(‘pleg’);pl.style.display=’’;const avg=(EL().participation||0).toFixed(1).replace(’.’,’,’);document.getElementById(‘pl-t’).textContent=`Participation — moy. ${avg} %`;document.getElementById(‘pl-g’).style.background=‘linear-gradient(to right,#bbdefb,#64b5f6,#1e88e5,#0d47a1)’;document.getElementById(‘pl-l’).innerHTML=’<span>35 %</span><span>52 %</span><span>70 %</span>’;}
-else if(m===‘gd’){const lg=document.getElementById(‘leg’);lg.style.display=’’;lg.innerHTML=’<h4>Gauche / Droite</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#7B1FA2,#D32F2F,#fff,#1565C0,#1A237E)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Ext. G</span><span>Gauche</span><span>50/50</span><span>Droite</span><span>Ext. D</span></div>’;}
-else if(m===‘frag’){const lg=document.getElementById(‘leg’);lg.style.display=’’;lg.innerHTML=’<h4>Fragmentation (ENP)</h4><div style="width:190px;height:8px;border-radius:4px;margin-bottom:5px;background:linear-gradient(to right,#00C853,#9C27B0)"></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--tm)"><span>Faible</span><span>Moyen</span><span>Élevé</span></div>’;}
-else if(m===‘hlm’){document.getElementById(‘hleg’).style.display=’’;updateHLMLegend();}
-updateColors();
-}
-function renderWinLeg(){const counts={};(CUR_DATA||[]).forEach(r=>{const bv=computeBV(r);if(bv.winner)counts[bv.winner.nuance]=(counts[bv.winner.nuance]||0)+1;});const lg=document.getElementById(‘leg’);lg.style.display=’’;let h=’<h4>Liste en tête</h4>’;Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>h+=`<div class="li"><div class="ls" style="background:${ccolor(n)}"></div><span>${esc(cname(n))}</span><span class="lc">${c}</span></div>`);lg.innerHTML=h;}
-function renderCorr(){const nc=cands();if(nc.length<3){document.getElementById(‘cc’).innerHTML=’<div style="color:var(--tm);font-size:11px;padding:8px 0">Corrélations : minimum 3 candidats requis.</div>’;return;}const keys=CUR_DATA||[];function cr(lbl,r){const abs=Math.abs(r),col=r>0?’#1565C0’:’#D32F2F’,left=r>=0?50:50-abs*50,w=abs*50,sign=r>=0?’+’:’’,str=abs<.2?‘très faible’:abs<.4?‘faible’:abs<.6?‘modérée’:abs<.8?‘forte’:‘très forte’;return`<div class="cr"><div class="cl">${esc(lbl)}</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${col}"></div></div><div class="cv" style="color:${col}">${sign}${r.toFixed(3)}</div><div class="cs">${str}</div></div>`;}
+function renderWinLeg(){const counts={};(CUR_DATA||[]).forEach(r=>{const bv=computeBV(r);if(bv.winner)counts[bv.winner.nuance]=(counts[bv.winner.nuance]||0)+1;});const lg=document.getElementById('leg');lg.style.display='';let h='<h4>Liste en tête</h4>';Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([n,c])=>h+=`<div class="li"><div class="ls" style="background:${ccolor(n)}"></div><span>${esc(cname(n))}</span><span class="lc">${c}</span></div>`);lg.innerHTML=h;}
+function renderCorr(){const nc=cands();if(nc.length<3){document.getElementById('cc').innerHTML='<div style="color:var(--tm);font-size:11px;padding:8px 0">Corrélations : minimum 3 candidats requis.</div>';return;}const keys=CUR_DATA||[];function cr(lbl,r){const abs=Math.abs(r),col=r>0?'#1565C0':'#D32F2F',left=r>=0?50:50-abs*50,w=abs*50,sign=r>=0?'+':'',str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';return`<div class="cr"><div class="cl">${esc(lbl)}</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${col}"></div></div><div class="cv" style="color:${col}">${sign}${r.toFixed(3)}</div><div class="cs">${str}</div></div>`;}
 const nuances=nc.map(c=>c.nuance);let pairs=[];for(let i=0;i<nuances.length;i++)for(let j=i+1;j<nuances.length;j++){const n1=nuances[i],n2=nuances[j],xs=keys.map(r=>r.exp>0?(parseInt(r[n1])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[n2])||0)/r.exp*100:0);pairs.push({n1,n2,r:pearson(xs,ys)});}pairs.sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
 const corrP=nuances.map(n=>({n,r:pearson(keys.map(r=>r.ins>0?r.vot/r.ins*100:0),keys.map(r=>r.exp>0?(parseInt(r[n])||0)/r.exp*100:0))})).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r));
 let html=`<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px;line-height:1.55">Corrélation de Pearson entre scores par bureau (34 BV, % exprimés).</div>`;html+=`<div class="ph2" style="margin-bottom:8px">Paires de candidats</div>`;pairs.slice(0,6).forEach(p=>html+=cr(`${cname(p.n1)} ↔ ${cname(p.n2)}`,p.r));html+=`<div class="cst">Participation ↔ score</div>`;corrP.forEach(item=>html+=cr(`Part. ↔ ${cname(item.n)}`,item.r));
-if(hlmReady&&hlmByBV.size>0){const hlmX=keys.map(r=>hlmPctForBV(r.bv));if(!hlmX.every(v=>v===0)){html+=`<div class="cst" style="color:${HLM_COLOR};border-color:rgba(244,143,177,.2)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${HLM_COLOR}"></span>% logements sociaux × résultats</span></div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson</div>`;html+=cr(‘Participation’,pearson(hlmX,keys.map(r=>r.ins>0?r.vot/r.ins*100:0)));nc.forEach(c=>{html+=cr(c.nom,pearson(hlmX,keys.map(r=>r.exp>0?(parseInt(r[c.nuance])||0)/r.exp*100:0)));});}}
-html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;nuances.forEach(n=>{html+=`<th style="padding:3px 2px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n).split(' ').slice(-1)[0].substring(0,7))}</th>`;});html+=`</tr>`;nuances.forEach(n1=>{html+=`<tr><td style="padding:3px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n1).split(' ').slice(-1)[0].substring(0,7))}</td>`;nuances.forEach(n2=>{if(n1===n2){html+=`<td style="padding:3px 2px;text-align:center;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-radius:2px">—</td>`;return;}const xs=keys.map(r=>r.exp>0?(parseInt(r[n1])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[n2])||0)/r.exp*100:0),rv=pearson(xs,ys),bg=rv>0?`rgba(21,101,192,${Math.min(rv*.7,.6)})`:`rgba(198,40,40,${Math.min(Math.abs(rv)*.7,.6)})`;html+=`<td style="padding:3px 2px;text-align:center;background:${bg};color:#fff;border-radius:2px">${rv.toFixed(2)}</td>`;});html+=`</tr>`;});html+=`</table></div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:10px">r de Pearson — 34 bureaux.</div>`;document.getElementById(‘cc’).innerHTML=html;}
-function buildTT(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return’’;const bv=computeBV(row),hlm=hlmForBV(key);let rows=bv.lists.slice(0,3).map(l=>`<div class="tt-r"><div class="tt-d" style="background:${l.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nom)}</span><span style="font-weight:700;color:${l.color};min-width:40px;text-align:right">${fP(l.pct)}</span></div>`).join(’’);if(curCand){const v=parseInt(row[curCand])||0,p=row.exp>0?v/row.exp*100:0,c=ccolor(curCand);rows=`<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>`+rows;}const hlmRow=hlm&&hlm.count>0?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(hlm.pct)} commune</span></div>`:’’;return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` — ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}${hlmRow}`;}
-function buildDrop(){const groups={};ELECTIONS.forEach(e=>{const yr=e.date?e.date.slice(-4):’’,type=e.label.split(’ ‘)[0],gk=type+yr;if(!groups[gk])groups[gk]={title:type+’ ‘+yr,items:[]};groups[gk].items.push(e);});let h=’’;Object.values(groups).forEach(g=>{h+=`<div class="eg-title">${esc(g.title)}</div>`;g.items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);});document.getElementById(‘ed’).innerHTML=h;}
-function toggleDrop(){const btn=document.getElementById(‘eb’),drop=document.getElementById(‘ed’);const o=drop.classList.toggle(‘open’);btn.classList.toggle(‘open’,o);if(o){const close=()=>{drop.classList.remove(‘open’);btn.classList.remove(‘open’);document.removeEventListener(‘click’,close);};setTimeout(()=>document.addEventListener(‘click’,close),10);}}
-async function selElection(eid){if(eid===CUR_EID)return;document.getElementById(‘lt’).textContent=`Chargement ${eid}…`;const ld=document.getElementById(‘ld’);ld.style.transition=‘opacity .2s’;ld.classList.remove(‘h’);CUR_EID=eid;excl.clear();curCand=null;document.getElementById(‘el’).textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;document.getElementById(‘ed’).classList.remove(‘open’);document.getElementById(‘eb’).classList.remove(‘open’);buildDrop();await loadCSV(eid);closeBV();document.getElementById(‘cp’).style.display=‘none’;document.querySelectorAll(’.pane’).forEach(p=>{p.style.display=’’;p.classList.remove(‘active’);});document.getElementById(‘pane-r’).classList.add(‘active’);document.querySelectorAll(’.tab’).forEach((t,i)=>t.classList.toggle(‘active’,i===0));renderGlobal();renderBVGrid();buildFC();setMode(mode);setTimeout(()=>ld.classList.add(‘h’),150);}
-function initMap(){map=new maplibregl.Map({container:‘map’,style:{version:8,sources:{carto:{type:‘raster’,tiles:[‘https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png’],tileSize:256,attribution:‘© CARTO © OSM’},lbl:{type:‘raster’,tiles:[‘https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png’],tileSize:256}},layers:[{id:‘carto’,type:‘raster’,source:‘carto’},{id:‘lbl’,type:‘raster’,source:‘lbl’}],glyphs:‘https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf’},center:[2.362,48.793],zoom:13.3,minZoom:12,maxZoom:18});
-map.on(‘load’,()=>{map.addSource(‘bv’,{type:‘geojson’,data:GEO,generateId:true});map.addLayer({id:‘bv-fill’,type:‘fill’,source:‘bv’,paint:{‘fill-color’:buildColorExpr(),‘fill-opacity’:[‘case’,[‘boolean’,[‘feature-state’,‘hover’],false],0.9,0.72]}});map.addLayer({id:‘bv-border’,type:‘line’,source:‘bv’,paint:{‘line-color’:[‘case’,[‘boolean’,[‘feature-state’,‘hover’],false],’#fff’,‘rgba(255,255,255,0.35)’],‘line-width’:[‘case’,[‘boolean’,[‘feature-state’,‘hover’],false],2,0.6]}});
-popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:‘270px’,offset:10});
-map.on(‘mouseenter’,‘bv-fill’,()=>map.getCanvas().style.cursor=‘pointer’);map.on(‘mouseleave’,‘bv-fill’,()=>{map.getCanvas().style.cursor=’’;if(popup&&!popup._panelSource)popup.remove();if(hovId!==null){map.setFeatureState({source:‘bv’,id:hovId},{hover:false});hovId=null;}});map.on(‘mousemove’,‘bv-fill’,e=>{if(!e.features.length)return;const f=e.features[0],k=f.properties.id_bv;if(hovId!==null)map.setFeatureState({source:‘bv’,id:hovId},{hover:false});hovId=f.id;map.setFeatureState({source:‘bv’,id:hovId},{hover:true});if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}});map.on(‘click’,‘bv-fill’,e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
+if(hlmReady&&hlmByBV.size>0){const hlmX=keys.map(r=>hlmPctForBV(r.bv));if(!hlmX.every(v=>v===0)){html+=`<div class="cst" style="color:${HLM_COLOR};border-color:rgba(244,143,177,.2)"><span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${HLM_COLOR}"></span>% logements sociaux × résultats</span></div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson</div>`;html+=cr('Participation',pearson(hlmX,keys.map(r=>r.ins>0?r.vot/r.ins*100:0)));nc.forEach(c=>{html+=cr(c.nom,pearson(hlmX,keys.map(r=>r.exp>0?(parseInt(r[c.nuance])||0)/r.exp*100:0)));});}}
+html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:9px;width:100%"><tr><th></th>`;nuances.forEach(n=>{html+=`<th style="padding:3px 2px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n).split(' ').slice(-1)[0].substring(0,7))}</th>`;});html+=`</tr>`;nuances.forEach(n1=>{html+=`<tr><td style="padding:3px;color:var(--ts);font-weight:600;white-space:nowrap">${esc(cname(n1).split(' ').slice(-1)[0].substring(0,7))}</td>`;nuances.forEach(n2=>{if(n1===n2){html+=`<td style="padding:3px 2px;text-align:center;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-radius:2px">\u2014</td>`;return;}const xs=keys.map(r=>r.exp>0?(parseInt(r[n1])||0)/r.exp*100:0),ys=keys.map(r=>r.exp>0?(parseInt(r[n2])||0)/r.exp*100:0),rv=pearson(xs,ys),bg=rv>0?`rgba(21,101,192,${Math.min(rv*.7,.6)})`:`rgba(198,40,40,${Math.min(Math.abs(rv)*.7,.6)})`;html+=`<td style="padding:3px 2px;text-align:center;background:${bg};color:#fff;border-radius:2px">${rv.toFixed(2)}</td>`;});html+=`</tr>`;});html+=`</table></div><div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:10px">r de Pearson \u2014 34 bureaux.</div>`;document.getElementById('cc').innerHTML=html;}
+function buildTT(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return'';const bv=computeBV(row),hlm=hlmForBV(key);let rows=bv.lists.slice(0,3).map(l=>`<div class="tt-r"><div class="tt-d" style="background:${l.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nom)}</span><span style="font-weight:700;color:${l.color};min-width:40px;text-align:right">${fP(l.pct)}</span></div>`).join('');if(curCand){const v=parseInt(row[curCand])||0,p=row.exp>0?v/row.exp*100:0,c=ccolor(curCand);rows=`<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>`+rows;}const hlmRow=hlm&&hlm.count>0?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(hlm.pct)} commune</span></div>`:'';return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` \u2014 ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}${hlmRow}`;}
+function buildDrop(){const groups={};ELECTIONS.forEach(e=>{const yr=e.date?e.date.slice(-4):'',type=e.label.split(' ')[0],gk=type+yr;if(!groups[gk])groups[gk]={title:type+' '+yr,items:[]};groups[gk].items.push(e);});let h='';Object.values(groups).forEach(g=>{h+=`<div class="eg-title">${esc(g.title)}</div>`;g.items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);});document.getElementById('ed').innerHTML=h;}
+function toggleDrop(){const btn=document.getElementById('eb'),drop=document.getElementById('ed');const o=drop.classList.toggle('open');btn.classList.toggle('open',o);if(o){const close=()=>{drop.classList.remove('open');btn.classList.remove('open');document.removeEventListener('click',close);};setTimeout(()=>document.addEventListener('click',close),10);}}
+async function selElection(eid){if(eid===CUR_EID)return;document.getElementById('lt').textContent=`Chargement ${eid}…`;const ld=document.getElementById('ld');ld.style.transition='opacity .2s';ld.classList.remove('h');CUR_EID=eid;excl.clear();curCand=null;document.getElementById('el').textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;document.getElementById('ed').classList.remove('open');document.getElementById('eb').classList.remove('open');buildDrop();await loadCSV(eid);closeBV();document.getElementById('cp').style.display='none';document.querySelectorAll('.pane').forEach(p=>{p.style.display='';p.classList.remove('active');});document.getElementById('pane-r').classList.add('active');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));renderGlobal();renderBVGrid();buildFC();setMode(mode);setTimeout(()=>ld.classList.add('h'),150);}
+function initMap(){map=new maplibregl.Map({container:'map',style:{version:8,sources:{carto:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],tileSize:256,attribution:'© CARTO © OSM'},lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}},layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},center:[2.362,48.793],zoom:13.3,minZoom:12,maxZoom:18});
+map.on('load',()=>{map.addSource('bv',{type:'geojson',data:GEO,generateId:true});map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
+popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
+map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','bv-fill',()=>{map.getCanvas().style.cursor='';if(popup&&!popup._panelSource)popup.remove();if(hovId!==null){map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=null;}});map.on('mousemove','bv-fill',e=>{if(!e.features.length)return;const f=e.features[0],k=f.properties.id_bv;if(hovId!==null)map.setFeatureState({source:'bv',id:hovId},{hover:false});hovId=f.id;map.setFeatureState({source:'bv',id:hovId},{hover:true});if(popup){popup._panelSource=false;popup.setLngLat(e.lngLat).setHTML(buildTT(k)).addTo(map);}});map.on('click','bv-fill',e=>{if(!e.features.length)return;showBV(e.features[0].properties.id_bv);});
 if(hlmLoaded&&hlmByBV.size>0)addHLMLayer();
-document.getElementById(‘ld’).classList.add(‘h’);renderWinLeg();});}
+document.getElementById('ld').classList.add('h');renderWinLeg();});}
 
 /* ══════════════════════════════════════════════════════════════════════════════
-ÉVOLUTIONS — OLS écologique + Sankey
+   ÉVOLUTIONS \u2014 OLS écologique + Sankey
 ══════════════════════════════════════════════════════════════════════════════ */
 
 /* Résolution système linéaire Ax=b par Gauss-Jordan avec Ridge */
 function solveLS(A,b){
-const n=b.length,eps=1e-6;
-const M=A.map((row,i)=>[…row.map((v,j)=>i===j?v+eps:v),b[i]]);
-for(let c=0;c<n;c++){
-let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;
-[M[c],M[mx]]=[M[mx],M[c]];
-const piv=M[c][c];
-if(Math.abs(piv)<1e-12){for(let j=0;j<=n;j++)M[c][j]=j===c?1:0;continue;}
-for(let j=c;j<=n;j++)M[c][j]/=piv;
-for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}
-}
-return M.map(r=>r[n]);
+  const n=b.length,eps=1e-6;
+  const M=A.map((row,i)=>[...row.map((v,j)=>i===j?v+eps:v),b[i]]);
+  for(let c=0;c<n;c++){
+    let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;
+    [M[c],M[mx]]=[M[mx],M[c]];
+    const piv=M[c][c];
+    if(Math.abs(piv)<1e-12){for(let j=0;j<=n;j++)M[c][j]=j===c?1:0;continue;}
+    for(let j=c;j<=n;j++)M[c][j]/=piv;
+    for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}
+  }
+  return M.map(r=>r[n]);
 }
 
 /* OLS écologique : pour chaque liste cible B, régresse ses voix bureau-par-bureau
-sur les voix des listes source A. Retourne une matrice de flux en voix absolues. */
+   sur les voix des listes source A. Retourne une matrice de flux en voix absolues. */
 function computeOLS(eidA,eidB,dataA,dataB){
-const elA=ELECTIONS.find(e=>e.id===eidA)||{},elB=ELECTIONS.find(e=>e.id===eidB)||{};
-const cA=elA.candidates||[],cB=elB.candidates||[];
-const mapA=new Map(dataA.map(r=>[r.bv,r])),mapB=new Map(dataB.map(r=>[r.bv,r]));
-const bvs=[…mapA.keys()].filter(k=>mapB.has(k));
-if(bvs.length<3)return null;
-const n=bvs.length;
+  const elA=ELECTIONS.find(e=>e.id===eidA)||{},elB=ELECTIONS.find(e=>e.id===eidB)||{};
+  const cA=elA.candidates||[],cB=elB.candidates||[];
+  const mapA=new Map(dataA.map(r=>[r.bv,r])),mapB=new Map(dataB.map(r=>[r.bv,r]));
+  const bvs=[...mapA.keys()].filter(k=>mapB.has(k));
+  if(bvs.length<3)return null;
+  const n=bvs.length;
 
-/* totaux globaux */
-const totA={},totB={};
-cA.forEach(c=>{totA[c.nuance]=dataA.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
-cB.forEach(c=>{totB[c.nuance]=dataB.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
-const absA=dataA.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
-const absB=dataB.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
+  /* totaux globaux */
+  const totA={},totB={};
+  cA.forEach(c=>{totA[c.nuance]=dataA.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
+  cB.forEach(c=>{totB[c.nuance]=dataB.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
+  const absA=dataA.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
+  const absB=dataB.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
 
-/* vecteurs par BV */
-const vA={},vB={};
-cA.forEach(c=>{vA[c.nuance]=bvs.map(bv=>parseInt(mapA.get(bv)[c.nuance])||0);});
-vA[’**ABS**’]=bvs.map(bv=>Math.max(0,(mapA.get(bv).ins||0)-(mapA.get(bv).vot||0)));
-cB.forEach(c=>{vB[c.nuance]=bvs.map(bv=>parseInt(mapB.get(bv)[c.nuance])||0);});
-vB[’**ABS**’]=bvs.map(bv=>Math.max(0,(mapB.get(bv).ins||0)-(mapB.get(bv).vot||0)));
+  /* vecteurs par BV */
+  const vA={},vB={};
+  cA.forEach(c=>{vA[c.nuance]=bvs.map(bv=>parseInt(mapA.get(bv)[c.nuance])||0);});
+  vA['__ABS__']=bvs.map(bv=>Math.max(0,(mapA.get(bv).ins||0)-(mapA.get(bv).vot||0)));
+  cB.forEach(c=>{vB[c.nuance]=bvs.map(bv=>parseInt(mapB.get(bv)[c.nuance])||0);});
+  vB['__ABS__']=bvs.map(bv=>Math.max(0,(mapB.get(bv).ins||0)-(mapB.get(bv).vot||0)));
 
-const srcA=[…cA.map(c=>c.nuance),’**ABS**’];
-const tgtB=[…cB.map(c=>c.nuance),’**ABS**’];
+  const srcA=[...cA.map(c=>c.nuance),'__ABS__'];
+  const tgtB=[...cB.map(c=>c.nuance),'__ABS__'];
 
-/* OLS pour chaque cible */
-const flows={};
-tgtB.forEach(nb=>{
-const y=vB[nb];
-const X=srcA.map(na=>vA[na]);
-const p=srcA.length;
-/* X’X */
-const XtX=Array.from({length:p},(*,i)=>Array.from({length:p},(*,j)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*X[j][k];return s;}));
-/* X’y */
-const Xty=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*y[k];return s;});
-const beta=solveLS(XtX,Xty);
-flows[nb]={};
-srcA.forEach((na,i)=>{
-const tot=na===’**ABS**’?absA:(totA[na]||0);
-flows[nb][na]=Math.max(0,beta[i]*tot);
-});
-});
+  /* OLS pour chaque cible */
+  const flows={};
+  tgtB.forEach(nb=>{
+    const y=vB[nb];
+    const X=srcA.map(na=>vA[na]);
+    const p=srcA.length;
+    /* X'X */
+    const XtX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*X[j][k];return s;}));
+    /* X'y */
+    const Xty=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=X[i][k]*y[k];return s;});
+    const beta=solveLS(XtX,Xty);
+    flows[nb]={};
+    srcA.forEach((na,i)=>{
+      const tot=na==='__ABS__'?absA:(totA[na]||0);
+      flows[nb][na]=Math.max(0,beta[i]*tot);
+    });
+  });
 
-/* Normalisation : somme des sorties depuis chaque source = total réel source */
-srcA.forEach(na=>{
-const tot=na===’**ABS**’?absA:(totA[na]||0);
-const sumOut=tgtB.reduce((s,nb)=>s+(flows[nb][na]||0),0);
-if(sumOut>0&&tot>0){const f=tot/sumOut;tgtB.forEach(nb=>flows[nb][na]=(flows[nb][na]||0)*f);}
-});
+  /* Normalisation : somme des sorties depuis chaque source = total réel source */
+  srcA.forEach(na=>{
+    const tot=na==='__ABS__'?absA:(totA[na]||0);
+    const sumOut=tgtB.reduce((s,nb)=>s+(flows[nb][na]||0),0);
+    if(sumOut>0&&tot>0){const f=tot/sumOut;tgtB.forEach(nb=>flows[nb][na]=(flows[nb][na]||0)*f);}
+  });
 
-return{flows,totA,totB,absA,absB,cA,cB,bvCount:bvs.length,elA,elB};
+  return{flows,totA,totB,absA,absB,cA,cB,bvCount:bvs.length,elA,elB};
 }
 
 function populateEvolSelects(){
-const sa=document.getElementById(‘ev-a’),sb=document.getElementById(‘ev-b’);
-const va=sa.value,vb=sb.value;
-const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join(’’);
-sa.innerHTML=opts;sb.innerHTML=opts;
-if(ELECTIONS.length>=2){
-sa.value=va||ELECTIONS[0].id;
-sb.value=vb||ELECTIONS[1].id;
-if(sa.value===sb.value&&ELECTIONS.length>1)sb.value=ELECTIONS[1].id;
-}
+  const sa=document.getElementById('ev-a'),sb=document.getElementById('ev-b');
+  const va=sa.value,vb=sb.value;
+  const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join('');
+  sa.innerHTML=opts;sb.innerHTML=opts;
+  if(ELECTIONS.length>=2){
+    sa.value=va||ELECTIONS[0].id;
+    sb.value=vb||ELECTIONS[1].id;
+    if(sa.value===sb.value&&ELECTIONS.length>1)sb.value=ELECTIONS[1].id;
+  }
 }
 
 async function renderEvol(){
-const eidA=document.getElementById(‘ev-a’).value;
-const eidB=document.getElementById(‘ev-b’).value;
-const thresh=parseInt(document.getElementById(‘ev-thr’).value)||0;
-const info=document.getElementById(‘evol-info’);
-if(!eidA||!eidB||eidA===eidB){
-document.getElementById(‘sk-svg’).innerHTML=’’;
-info.textContent=‘Sélectionnez deux élections différentes.’;
-return;
-}
-info.textContent=‘Calcul OLS en cours…’;
-const[dataA,dataB]=await Promise.all([loadCSVById(eidA),loadCSVById(eidB)]);
-if(!dataA.length||!dataB.length){info.textContent=‘Données manquantes.’;return;}
-const res=computeOLS(eidA,eidB,dataA,dataB);
-if(!res){info.textContent=‘Bureaux communs insuffisants.’;return;}
-info.textContent=`${res.bvCount} bureaux communs · OLS écologique · seuil ${fN(thresh)} voix`;
-drawSankey(res,thresh);
-renderEvolSide(res,thresh);
+  const eidA=document.getElementById('ev-a').value;
+  const eidB=document.getElementById('ev-b').value;
+  const thresh=parseInt(document.getElementById('ev-thr').value)||0;
+  const info=document.getElementById('evol-info');
+  if(!eidA||!eidB||eidA===eidB){
+    document.getElementById('sk-svg').innerHTML='';
+    info.textContent='Sélectionnez deux élections différentes.';
+    return;
+  }
+  info.textContent='Calcul OLS en cours…';
+  const[dataA,dataB]=await Promise.all([loadCSVById(eidA),loadCSVById(eidB)]);
+  if(!dataA.length||!dataB.length){info.textContent='Données manquantes.';return;}
+  const res=computeOLS(eidA,eidB,dataA,dataB);
+  if(!res){info.textContent='Bureaux communs insuffisants.';return;}
+  info.textContent=`${res.bvCount} bureaux communs · OLS écologique · seuil ${fN(thresh)} voix`;
+  drawSankey(res,thresh);
+  renderEvolSide(res,thresh);
 }
 
 function drawSankey(res,thresh){
-const svg=document.getElementById(‘sk-svg’);
-const wrap=document.getElementById(‘sk-wrap’);
-const W=wrap.clientWidth||900,H=wrap.clientHeight||580;
-const{flows,totA,totB,absA,absB,cA,cB,elA,elB}=res;
-const NS=‘http://www.w3.org/2000/svg’;
+  const svg=document.getElementById('sk-svg');
+  const wrap=document.getElementById('sk-wrap');
+  const W=wrap.clientWidth||900,H=wrap.clientHeight||580;
+  const{flows,totA,totB,absA,absB,cA,cB,elA,elB}=res;
+  const NS='http://www.w3.org/2000/svg';
 
-/* noeuds avec totaux */
-const srcNodes=[…cA.map(c=>({…c,_tot:totA[c.nuance]||0})),{nuance:’**ABS**’,nom:‘Abstentions’,color:’#555’,_tot:absA}];
-const tgtNodes=[…cB.map(c=>({…c,_tot:totB[c.nuance]||0})),{nuance:’**ABS**’,nom:‘Abstentions’,color:’#555’,_tot:absB}];
+  /* noeuds avec totaux */
+  const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];
+  const tgtNodes=[...cB.map(c=>({...c,_tot:totB[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absB}];
 
-const PAD=40,LBL=130,NW=16,GAP=5;
-const areaH=H-PAD*2;
+  const PAD=40,LBL=130,NW=16,GAP=5;
+  const areaH=H-PAD*2;
 
-function layout(nodes,cx){
-const total=nodes.reduce((s,n)=>s+n._tot,0)||1;
-const sc=(areaH-GAP*(nodes.length-1))/total;
-let y=PAD;
-nodes.forEach(n=>{n._h=Math.max(3,Math.round(n._tot*sc));n._y=y;n._cx=cx;y+=n._h+GAP;});
-}
-layout(srcNodes,LBL);
-layout(tgtNodes,W-LBL);
+  function layout(nodes,cx){
+    const total=nodes.reduce((s,n)=>s+n._tot,0)||1;
+    const sc=(areaH-GAP*(nodes.length-1))/total;
+    let y=PAD;
+    nodes.forEach(n=>{n._h=Math.max(3,Math.round(n._tot*sc));n._y=y;n._cx=cx;y+=n._h+GAP;});
+  }
+  layout(srcNodes,LBL);
+  layout(tgtNodes,W-LBL);
 
-/* accumulateurs de position */
-const outY={};srcNodes.forEach(n=>outY[n.nuance]=n._y);
-const inY={};tgtNodes.forEach(n=>inY[n.nuance]=n._y);
+  /* accumulateurs de position */
+  const outY={};srcNodes.forEach(n=>outY[n.nuance]=n._y);
+  const inY={};tgtNodes.forEach(n=>inY[n.nuance]=n._y);
 
-/* liens */
-const links=[];
-srcNodes.forEach(sa=>{
-tgtNodes.forEach(tb=>{
-const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
-if(v<thresh)return;
-const hA=sa._tot>0?sa._h*v/sa._tot:0;
-const hB=tb._tot>0?tb._h*v/tb._tot:0;
-links.push({sa,tb,v,hA,hB,y0:outY[sa.nuance],y1:inY[tb.nuance]});
-outY[sa.nuance]+=hA;
-inY[tb.nuance]+=hB;
-});
-});
+  /* liens */
+  const links=[];
+  srcNodes.forEach(sa=>{
+    tgtNodes.forEach(tb=>{
+      const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
+      if(v<thresh)return;
+      const hA=sa._tot>0?sa._h*v/sa._tot:0;
+      const hB=tb._tot>0?tb._h*v/tb._tot:0;
+      links.push({sa,tb,v,hA,hB,y0:outY[sa.nuance],y1:inY[tb.nuance]});
+      outY[sa.nuance]+=hA;
+      inY[tb.nuance]+=hB;
+    });
+  });
 
-svg.setAttribute(‘viewBox’,`0 0 ${W} ${H}`);
-svg.setAttribute(‘width’,W);svg.setAttribute(‘height’,H);
-svg.innerHTML=’’;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.innerHTML='';
 
-/* dégradés */
-const defs=document.createElementNS(NS,‘defs’);
-links.forEach((lk,i)=>{
-const g=document.createElementNS(NS,‘linearGradient’);
-g.setAttribute(‘id’,`g${i}`);g.setAttribute(‘x1’,‘0%’);g.setAttribute(‘x2’,‘100%’);g.setAttribute(‘y1’,‘0%’);g.setAttribute(‘y2’,‘0%’);
-const s1=document.createElementNS(NS,‘stop’);s1.setAttribute(‘offset’,‘0%’);s1.setAttribute(‘stop-color’,lk.sa.color);s1.setAttribute(‘stop-opacity’,‘0.5’);
-const s2=document.createElementNS(NS,‘stop’);s2.setAttribute(‘offset’,‘100%’);s2.setAttribute(‘stop-color’,lk.tb.color);s2.setAttribute(‘stop-opacity’,‘0.4’);
-g.appendChild(s1);g.appendChild(s2);defs.appendChild(g);
-});
-svg.appendChild(defs);
+  /* dégradés */
+  const defs=document.createElementNS(NS,'defs');
+  links.forEach((lk,i)=>{
+    const g=document.createElementNS(NS,'linearGradient');
+    g.setAttribute('id',`g${i}`);g.setAttribute('x1','0%');g.setAttribute('x2','100%');g.setAttribute('y1','0%');g.setAttribute('y2','0%');
+    const s1=document.createElementNS(NS,'stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',lk.sa.color);s1.setAttribute('stop-opacity','0.5');
+    const s2=document.createElementNS(NS,'stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',lk.tb.color);s2.setAttribute('stop-opacity','0.4');
+    g.appendChild(s1);g.appendChild(s2);defs.appendChild(g);
+  });
+  svg.appendChild(defs);
 
-/* flux bezier */
-links.forEach((lk,i)=>{
-const x0=lk.sa._cx+NW,x1=lk.tb._cx,cx=(x0+x1)/2;
-const y0t=lk.y0,y0b=lk.y0+lk.hA,y1t=lk.y1,y1b=lk.y1+lk.hB;
-const path=document.createElementNS(NS,‘path’);
-path.setAttribute(‘d’,`M${x0} ${y0t} C${cx} ${y0t},${cx} ${y1t},${x1} ${y1t} L${x1} ${y1b} C${cx} ${y1b},${cx} ${y0b},${x0} ${y0b}Z`);
-path.setAttribute(‘fill’,`url(#g${i})`);
-path.setAttribute(‘stroke’,‘none’);
-path.style.opacity=’.85’;path.style.cursor=‘pointer’;path.style.transition=‘opacity .15s’;
-const nomA=lk.sa.nuance===’**ABS**’?‘Abstentions’:lk.sa.nom;
-const nomB=lk.tb.nuance===’**ABS**’?‘Abstentions’:lk.tb.nom;
-const pctA=lk.sa._tot>0?lk.v/lk.sa._tot*100:0;
-const pctB=lk.tb._tot>0?lk.v/lk.tb._tot*100:0;
-const tipHtml=`<strong style="color:${lk.sa.color}">${esc(nomA)}</strong> <span style="color:var(--tm)">→</span> <strong style="color:${lk.tb.color}">${esc(nomB)}</strong><br><span style="color:var(--tm)">Flux estimé :</span> <strong>${fN(lk.v)} voix</strong><br><span style="font-size:10px;color:var(--tm)">${fP(pctA)} de la source · ${fP(pctB)} de la cible</span>`;
-path.addEventListener(‘mouseenter’,e=>{path.style.opacity=‘1’;showTip(e,tipHtml);});
-path.addEventListener(‘mousemove’,moveTip);
-path.addEventListener(‘mouseleave’,()=>{path.style.opacity=’.85’;hideTip();});
-svg.appendChild(path);
-});
+  /* flux bezier */
+  links.forEach((lk,i)=>{
+    const x0=lk.sa._cx+NW,x1=lk.tb._cx,cx=(x0+x1)/2;
+    const y0t=lk.y0,y0b=lk.y0+lk.hA,y1t=lk.y1,y1b=lk.y1+lk.hB;
+    const path=document.createElementNS(NS,'path');
+    path.setAttribute('d',`M${x0} ${y0t} C${cx} ${y0t},${cx} ${y1t},${x1} ${y1t} L${x1} ${y1b} C${cx} ${y1b},${cx} ${y0b},${x0} ${y0b}Z`);
+    path.setAttribute('fill',`url(#g${i})`);
+    path.setAttribute('stroke','none');
+    path.style.opacity='.85';path.style.cursor='pointer';path.style.transition='opacity .15s';
+    const nomA=lk.sa.nuance==='__ABS__'?'Abstentions':lk.sa.nom;
+    const nomB=lk.tb.nuance==='__ABS__'?'Abstentions':lk.tb.nom;
+    const pctA=lk.sa._tot>0?lk.v/lk.sa._tot*100:0;
+    const pctB=lk.tb._tot>0?lk.v/lk.tb._tot*100:0;
+    const tipHtml=`<strong style="color:${lk.sa.color}">${esc(nomA)}</strong> <span style="color:var(--tm)">→</span> <strong style="color:${lk.tb.color}">${esc(nomB)}</strong><br><span style="color:var(--tm)">Flux estimé :</span> <strong>${fN(lk.v)} voix</strong><br><span style="font-size:10px;color:var(--tm)">${fP(pctA)} de la source · ${fP(pctB)} de la cible</span>`;
+    path.addEventListener('mouseenter',e=>{path.style.opacity='1';showTip(e,tipHtml);});
+    path.addEventListener('mousemove',moveTip);
+    path.addEventListener('mouseleave',()=>{path.style.opacity='.85';hideTip();});
+    svg.appendChild(path);
+  });
 
-/* noeuds + labels source */
-srcNodes.forEach(n=>{
-const rect=document.createElementNS(NS,‘rect’);
-rect.setAttribute(‘x’,n._cx);rect.setAttribute(‘y’,n._y);
-rect.setAttribute(‘width’,NW);rect.setAttribute(‘height’,Math.max(2,n._h));
-rect.setAttribute(‘fill’,n.color);rect.setAttribute(‘rx’,‘3’);
-svg.appendChild(rect);
-const nom=n.nuance===’**ABS**’?‘Abstentions’:n.nom;
-const short=nom.length>22?nom.substring(0,20)+’…’:nom;
-const t=document.createElementNS(NS,‘text’);
-t.setAttribute(‘x’,n._cx-8);t.setAttribute(‘y’,n._y+n._h/2);
-t.setAttribute(‘text-anchor’,‘end’);t.setAttribute(‘dominant-baseline’,‘central’);
-t.setAttribute(‘fill’,’#d4d0ca’);t.setAttribute(‘font-size’,‘11’);t.setAttribute(‘font-family’,‘DM Sans,sans-serif’);
-t.textContent=short;svg.appendChild(t);
-if(n._h>18){const v=document.createElementNS(NS,‘text’);v.setAttribute(‘x’,n._cx-8);v.setAttribute(‘y’,n._y+n._h/2+13);v.setAttribute(‘text-anchor’,‘end’);v.setAttribute(‘dominant-baseline’,‘central’);v.setAttribute(‘fill’,’#706b63’);v.setAttribute(‘font-size’,‘10’);v.setAttribute(‘font-family’,‘DM Sans,sans-serif’);v.textContent=fN(n._tot);svg.appendChild(v);}
-});
+  /* noeuds + labels source */
+  srcNodes.forEach(n=>{
+    const rect=document.createElementNS(NS,'rect');
+    rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);
+    rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));
+    rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');
+    svg.appendChild(rect);
+    const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
+    const short=nom.length>22?nom.substring(0,20)+'…':nom;
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',n._cx-8);t.setAttribute('y',n._y+n._h/2);
+    t.setAttribute('text-anchor','end');t.setAttribute('dominant-baseline','central');
+    t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
+    t.textContent=short;svg.appendChild(t);
+    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx-8);v.setAttribute('y',n._y+n._h/2+13);v.setAttribute('text-anchor','end');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
+  });
 
-/* noeuds + labels cible */
-tgtNodes.forEach(n=>{
-const rect=document.createElementNS(NS,‘rect’);
-rect.setAttribute(‘x’,n._cx);rect.setAttribute(‘y’,n._y);
-rect.setAttribute(‘width’,NW);rect.setAttribute(‘height’,Math.max(2,n._h));
-rect.setAttribute(‘fill’,n.color);rect.setAttribute(‘rx’,‘3’);
-svg.appendChild(rect);
-const nom=n.nuance===’**ABS**’?‘Abstentions’:n.nom;
-const short=nom.length>22?nom.substring(0,20)+’…’:nom;
-const t=document.createElementNS(NS,‘text’);
-t.setAttribute(‘x’,n._cx+NW+8);t.setAttribute(‘y’,n._y+n._h/2);
-t.setAttribute(‘dominant-baseline’,‘central’);
-t.setAttribute(‘fill’,’#d4d0ca’);t.setAttribute(‘font-size’,‘11’);t.setAttribute(‘font-family’,‘DM Sans,sans-serif’);
-t.textContent=short;svg.appendChild(t);
-if(n._h>18){const v=document.createElementNS(NS,‘text’);v.setAttribute(‘x’,n._cx+NW+8);v.setAttribute(‘y’,n._y+n._h/2+13);v.setAttribute(‘dominant-baseline’,‘central’);v.setAttribute(‘fill’,’#706b63’);v.setAttribute(‘font-size’,‘10’);v.setAttribute(‘font-family’,‘DM Sans,sans-serif’);v.textContent=fN(n._tot);svg.appendChild(v);}
-});
+  /* noeuds + labels cible */
+  tgtNodes.forEach(n=>{
+    const rect=document.createElementNS(NS,'rect');
+    rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);
+    rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));
+    rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');
+    svg.appendChild(rect);
+    const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
+    const short=nom.length>22?nom.substring(0,20)+'…':nom;
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',n._cx+NW+8);t.setAttribute('y',n._y+n._h/2);
+    t.setAttribute('dominant-baseline','central');
+    t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
+    t.textContent=short;svg.appendChild(t);
+    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx+NW+8);v.setAttribute('y',n._y+n._h/2+13);v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
+  });
 
-/* titres colonnes */
-function colTitle(x,label){const t=document.createElementNS(NS,‘text’);t.setAttribute(‘x’,x);t.setAttribute(‘y’,PAD-16);t.setAttribute(‘text-anchor’,‘middle’);t.setAttribute(‘fill’,’#b8282e’);t.setAttribute(‘font-size’,‘11’);t.setAttribute(‘font-weight’,‘600’);t.setAttribute(‘font-family’,‘DM Sans,sans-serif’);t.textContent=label;svg.appendChild(t);}
-colTitle(LBL+NW/2,(elA.label||’’)+’ · ‘+(elA.date||’’));
-colTitle(W-LBL+NW/2,(elB.label||’’)+’ · ‘+(elB.date||’’));
+  /* titres colonnes */
+  function colTitle(x,label){const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',PAD-16);t.setAttribute('text-anchor','middle');t.setAttribute('fill','#b8282e');t.setAttribute('font-size','11');t.setAttribute('font-weight','600');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=label;svg.appendChild(t);}
+  colTitle(LBL+NW/2,(elA.label||'')+' · '+(elA.date||''));
+  colTitle(W-LBL+NW/2,(elB.label||'')+' · '+(elB.date||''));
 }
 
 function renderEvolSide(res,thresh){
-const{flows,totA,absA,cA,cB}=res;
-const srcNodes=[…cA.map(c=>({…c,_tot:totA[c.nuance]||0})),{nuance:’**ABS**’,nom:‘Abstentions’,color:’#555’,_tot:absA}];
-const tgtNodes=[…cB.map(c=>({…c,_tot:(res.totB[c.nuance]||0)})),{nuance:’**ABS**’,nom:‘Abstentions’,color:’#555’,_tot:res.absB}];
-let html=’’;
-srcNodes.filter(s=>s._tot>0).forEach(sa=>{
-const nom=sa.nuance===’**ABS**’?‘Abstentions’:sa.nom;
-html+=`<div class="fl-block"><div class="fl-hdr"><div class="fl-dot" style="background:${sa.color}"></div><span class="fl-nm" style="color:${sa.color}">${esc(nom)}</span><span class="fl-tot">${fN(sa._tot)}</span></div>`;
-tgtNodes.forEach(tb=>{
-const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
-if(v<Math.max(1,thresh/2))return;
-const pct=sa._tot>0?v/sa._tot*100:0;
-const nomB=tb.nuance===’**ABS**’?‘Abstentions’:tb.nom;
-html+=`<div class="fl-row"><div class="fl-rd" style="background:${tb.color}"></div><span class="fl-rl" title="${esc(nomB)}">${esc(nomB)}</span><span class="fl-rv">${fN(v)}</span><span class="fl-rp">${fP(pct)}</span></div>`;
-});
-html+=`</div>`;
-});
-document.getElementById(‘ev-flows’).innerHTML=html||’<div style="color:var(--tm);font-size:11px">Aucun flux au-dessus du seuil.</div>’;
+  const{flows,totA,absA,cA,cB}=res;
+  const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];
+  const tgtNodes=[...cB.map(c=>({...c,_tot:(res.totB[c.nuance]||0)})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:res.absB}];
+  let html='';
+  srcNodes.filter(s=>s._tot>0).forEach(sa=>{
+    const nom=sa.nuance==='__ABS__'?'Abstentions':sa.nom;
+    html+=`<div class="fl-block"><div class="fl-hdr"><div class="fl-dot" style="background:${sa.color}"></div><span class="fl-nm" style="color:${sa.color}">${esc(nom)}</span><span class="fl-tot">${fN(sa._tot)}</span></div>`;
+    tgtNodes.forEach(tb=>{
+      const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
+      if(v<Math.max(1,thresh/2))return;
+      const pct=sa._tot>0?v/sa._tot*100:0;
+      const nomB=tb.nuance==='__ABS__'?'Abstentions':tb.nom;
+      html+=`<div class="fl-row"><div class="fl-rd" style="background:${tb.color}"></div><span class="fl-rl" title="${esc(nomB)}">${esc(nomB)}</span><span class="fl-rv">${fN(v)}</span><span class="fl-rp">${fP(pct)}</span></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('ev-flows').innerHTML=html||'<div style="color:var(--tm);font-size:11px">Aucun flux au-dessus du seuil.</div>';
 }
 
-function showTip(e,html){const t=document.getElementById(‘sk-tip’);t.innerHTML=html;t.style.display=‘block’;moveTip(e);}
-function moveTip(e){const t=document.getElementById(‘sk-tip’),w=document.getElementById(‘sk-wrap’),r=w.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top-10;if(x+240>r.width)x=e.clientX-r.left-240;if(y+90>r.height)y=e.clientY-r.top-90;t.style.left=x+‘px’;t.style.top=y+‘px’;}
-function hideTip(){document.getElementById(‘sk-tip’).style.display=‘none’;}
+function showTip(e,html){const t=document.getElementById('sk-tip');t.innerHTML=html;t.style.display='block';moveTip(e);}
+function moveTip(e){const t=document.getElementById('sk-tip'),w=document.getElementById('sk-wrap'),r=w.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top-10;if(x+240>r.width)x=e.clientX-r.left-240;if(y+90>r.height)y=e.clientY-r.top-90;t.style.left=x+'px';t.style.top=y+'px';}
+function hideTip(){document.getElementById('sk-tip').style.display='none';}
 
 /* ── map init ── */
 async function init(){
-document.getElementById(‘lt’).textContent=‘Chargement des données…’;
-try{const r=await fetch(‘geo.json?v=’+Date.now());GEO=await r.json();}catch(e){console.error(‘geo.json introuvable !’,e);}
-try{const r=await fetch(`${DATA_BASE}elections.json?v=`+Date.now());ELECTIONS=await r.json();}catch(e){console.error(‘elections.json introuvable !’,e);ELECTIONS=[];}
-if(ELECTIONS.length>0){CUR_EID=ELECTIONS[0].id;document.getElementById(‘el’).textContent=ELECTIONS[0].label;}
-buildDrop();
-if(CUR_EID)await loadCSV(CUR_EID);
-renderGlobal();renderBVGrid();buildFC();
-loadRPLS().then(()=>{renderBVGrid();updateHLMLegend();if(mode===‘hlm’)updateColors();if(map&&map.loaded())addHLMLayer();});
-initMap();
+  document.getElementById('lt').textContent='Chargement des données…';
+  try{const r=await fetch('geo.json?v='+Date.now());GEO=await r.json();}catch(e){console.error('geo.json introuvable !',e);}
+  try{const r=await fetch(`${DATA_BASE}elections.json?v=`+Date.now());ELECTIONS=await r.json();}catch(e){console.error('elections.json introuvable !',e);ELECTIONS=[];}
+  if(ELECTIONS.length>0){CUR_EID=ELECTIONS[0].id;document.getElementById('el').textContent=ELECTIONS[0].label;}
+  buildDrop();
+  if(CUR_EID)await loadCSV(CUR_EID);
+  renderGlobal();renderBVGrid();buildFC();
+  loadRPLS().then(()=>{renderBVGrid();updateHLMLegend();if(mode==='hlm')updateColors();if(map&&map.loaded())addHLMLayer();});
+  initMap();
 }
 
 /* ── Hémicycle MUN26T2 ── */
-function renderHemicycle(container){container.innerHTML=`<div class="cpst" style="margin-bottom:10px">Composition du conseil municipal</div><style>.ws-group rect{transition:opacity .15s;cursor:default;}.ws-group:hover rect{opacity:.75;}</style><svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;display:block;margin:0 auto"><g><g class="ws-group" fill="#C2185B"><title>Maire - PCF</title><rect x="6.75" y="164.25" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#B71C1C"><title>LFI — 10 sièges</title><rect x="41.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#C2185B"><title>PCF — 10 sièges</title><rect x="111.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#AD1457"><title>CIT — 4 sièges</title><rect x="216.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#4CAF50"><title>ECO — 4 sièges</title><rect x="251.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#62C167"><title>GEN — 2 sièges</title><rect x="286.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#EC407A"><title>PS — 6 sièges</title><rect x="286.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#FF8F00"><title>NPCV — 7 sièges</title><rect x="41.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#1565C0"><title>EPV — 6 sièges</title><rect x="76.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><line x1="6" y1="196" x2="354" y2="196" stroke="rgba(255,255,255,.14)" stroke-width="1.5" stroke-dasharray="4,4"/><text x="354" y="192" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">majorité ↑</text><text x="354" y="208" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">opposition ↓</text><text x="295" y="270" text-anchor="middle" font-size="42" font-weight="700" fill="#d4d0ca" font-family="Georgia,serif">49</text><text x="295" y="290" text-anchor="middle" font-size="10" fill="#706b63" font-family="sans-serif">CONSEILLERS</text></g></svg><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#C2185B"></div><span style="color:var(--ts)">Liste Garzon</span><strong style="color:#C2185B;font-family:Georgia,serif;font-size:13px">36</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#FF8F00"></div><span style="color:var(--ts)">Liste Esclagnon</span><strong style="color:#FF8F00;font-family:Georgia,serif;font-size:13px">7</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#1565C0"></div><span style="color:var(--ts)">Liste Conquet</span><strong style="color:#1565C0;font-family:Georgia,serif;font-size:13px">6</strong></div></div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;justify-content:center"><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#B71C1C;display:inline-block"></span><span style="color:var(--ts)">LFI</span><strong style="color:#B71C1C">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#C2185B;display:inline-block"></span><span style="color:var(--ts)">PCF</span><strong style="color:#C2185B">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#EC407A;display:inline-block"></span><span style="color:var(--ts)">PS</span><strong style="color:#EC407A">6</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#AD1457;display:inline-block"></span><span style="color:var(--ts)">CIT</span><strong style="color:#AD1457">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height=6px;border-radius:2px;background:#4CAF50;display:inline-block"></span><span style="color:var(--ts)">ECO</span><strong style="color:#4CAF50">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#62C167;display:inline-block"></span><span style="color:var(--ts)">GEN</span><strong style="color:#62C167">2</strong></span></div><div style="font-size:9px;color:var(--tm);text-align:center;margin-top:8px">22/03/2026 · 49 conseillers · majorité absolue : 25</div>`;}
+function renderHemicycle(container){container.innerHTML=`<div class="cpst" style="margin-bottom:10px">Composition du conseil municipal</div><style>.ws-group rect{transition:opacity .15s;cursor:default;}.ws-group:hover rect{opacity:.75;}</style><svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;display:block;margin:0 auto"><g><g class="ws-group" fill="#C2185B"><title>Maire - PCF</title><rect x="6.75" y="164.25" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#B71C1C"><title>LFI \u2014 10 sièges</title><rect x="41.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#C2185B"><title>PCF \u2014 10 sièges</title><rect x="111.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#AD1457"><title>CIT \u2014 4 sièges</title><rect x="216.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#4CAF50"><title>ECO \u2014 4 sièges</title><rect x="251.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#62C167"><title>GEN \u2014 2 sièges</title><rect x="286.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#EC407A"><title>PS \u2014 6 sièges</title><rect x="286.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#FF8F00"><title>NPCV \u2014 7 sièges</title><rect x="41.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#1565C0"><title>EPV \u2014 6 sièges</title><rect x="76.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><line x1="6" y1="196" x2="354" y2="196" stroke="rgba(255,255,255,.14)" stroke-width="1.5" stroke-dasharray="4,4"/><text x="354" y="192" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">majorité ↑</text><text x="354" y="208" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">opposition ↓</text><text x="295" y="270" text-anchor="middle" font-size="42" font-weight="700" fill="#d4d0ca" font-family="Georgia,serif">49</text><text x="295" y="290" text-anchor="middle" font-size="10" fill="#706b63" font-family="sans-serif">CONSEILLERS</text></g></svg><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#C2185B"></div><span style="color:var(--ts)">Liste Garzon</span><strong style="color:#C2185B;font-family:Georgia,serif;font-size:13px">36</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#FF8F00"></div><span style="color:var(--ts)">Liste Esclagnon</span><strong style="color:#FF8F00;font-family:Georgia,serif;font-size:13px">7</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#1565C0"></div><span style="color:var(--ts)">Liste Conquet</span><strong style="color:#1565C0;font-family:Georgia,serif;font-size:13px">6</strong></div></div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;justify-content:center"><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#B71C1C;display:inline-block"></span><span style="color:var(--ts)">LFI</span><strong style="color:#B71C1C">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#C2185B;display:inline-block"></span><span style="color:var(--ts)">PCF</span><strong style="color:#C2185B">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#EC407A;display:inline-block"></span><span style="color:var(--ts)">PS</span><strong style="color:#EC407A">6</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#AD1457;display:inline-block"></span><span style="color:var(--ts)">CIT</span><strong style="color:#AD1457">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height=6px;border-radius:2px;background:#4CAF50;display:inline-block"></span><span style="color:var(--ts)">ECO</span><strong style="color:#4CAF50">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#62C167;display:inline-block"></span><span style="color:var(--ts)">GEN</span><strong style="color:#62C167">2</strong></span></div><div style="font-size:9px;color:var(--tm);text-align:center;margin-top:8px">22/03/2026 · 49 conseillers · majorité absolue : 25</div>`;}
 
 init();
 </script>
-
 </body>
 </html>
