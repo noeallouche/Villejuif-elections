@@ -352,7 +352,12 @@ function animCount(el,target){const start=performance.now(),dur=600;const tick=n
 function rKPIs(el,d){const p=d.inscrits>0?d.votants/d.inscrits*100:0;el.innerHTML=`<div class="kc"><div class="kv" id="kv-ins">${fN(d.inscrits)}</div><div class="kl">Inscrits</div></div><div class="kc"><div class="kv">${fP(p)}</div><div class="kl">Participation</div></div><div class="kc"><div class="kv">${fP(100-p)}</div><div class="kl">Abstention</div></div>`;const i=el.querySelector('#kv-ins');if(i&&d.inscrits>0)animCount(i,d.inscrits);}
 function rBal(el,d){const T=d.exprimes||1;const segs=[[d.voixEXG/T*100,'#7B1FA2','Ext. gauche'],[d.voixGR/T*100,'#C62828','G. rad.'],[d.voixG/T*100,'#EC407A','Gauche'],[d.voixCen/T*100,'#FF8F00','Centre'],[d.voixDr/T*100,'#1565C0','Droite'],[d.voixEXD/T*100,'#1A237E','Ext. droite'],[d.voixAu/T*100,'#78909C','Autres']].filter(s=>s[0]>0.5);el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,.25);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Équilibre politique</div><div class="bb">${segs.map(s=>`<div style="width:${s[0]}%;background:${s[1]}" title="${s[2]} ${fP(s[0])}"></div>`).join('')}</div><div class="bbl">${segs.map(s=>`<span style="color:${s[1]}">${s[2]} ${fP(s[0])}</span>`).join('')}</div>`;}
 function rBars(el,lists,exp,anim=true,click=false){let h='';lists.forEach((l,i)=>{const pct=exp>0?l.voix/exp*100:0,col=l.color||ccolor(l.nuance),an=anim?`style="animation-delay:${i*.03}s"`:'',cl=click?`class="rb ck" onclick="openCP('${esc(l.nuance)}')" title="Fiche ${esc(l.nom)}"`:` class="rb"`;h+=`<div ${cl} ${an}><span class="nbdg" style="color:${col};opacity:.7">${esc(l.nuance)}</span><span class="rn" style="color:${col};font-weight:600">${esc(l.nom)}</span><span class="rp">${fP(pct)}</span><span class="rv">${fN(l.voix)}</span><div class="rt"><div class="rf" style="width:${pct}%;background:${col}"></div></div></div>`;});el.innerHTML=h||'<div style="color:var(--tm);font-size:11px;padding:8px 0">Aucune liste.</div>';}
-function renderGlobal(){const el=EL(),a=agg();document.getElementById('p-title').textContent=`Résultats \u2014 ${el.label||''}`;document.getElementById('ft').textContent=`${el.label||''} · ${el.date||''} · 34 bureaux · ${fN(el.inscrits||0)} inscrits`;rKPIs(document.getElementById('g-k'),a);rBal(document.getElementById('g-b'),a);rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);const hDiv=document.getElementById('g-hemicycle');if(hDiv){if(CUR_EID==='MUN26T2'){hDiv.style.display='';renderHemicycle(hDiv);}else hDiv.style.display='none';}}
+function renderGlobal(){
+  const el=EL(),a=agg();
+  const ptitle=document.getElementById('p-title');
+  const pft=document.getElementById('ft');
+  if(ptitle)ptitle.textContent=`Résultats — ${el.label||''}`;
+  if(pft)pft.textContent=`${el.label||''} · ${el.date||''} · 34 bureaux · ${fN(el.inscrits||0)} inscrits`;rKPIs(document.getElementById('g-k'),a);rBal(document.getElementById('g-b'),a);rBars(document.getElementById('g-r'),a.lists,a.exprimes,true,true);const hDiv=document.getElementById('g-hemicycle');if(hDiv){if(CUR_EID==='MUN26T2'){hDiv.style.display='';renderHemicycle(hDiv);}else hDiv.style.display='none';}}
 function getFeatureCenter(key){if(!GEO)return null;const feat=GEO.features.find(f=>f.properties.id_bv===String(key));if(!feat)return null;const coords=feat.geometry.type==='Polygon'?feat.geometry.coordinates[0]:feat.geometry.coordinates.reduce((a,r)=>a.concat(r[0]),[]);if(!coords||!coords.length)return null;let sl=0,sa=0;coords.forEach(([lg,lt])=>{sl+=lg;sa+=lt;});return[sl/coords.length,sa/coords.length];}
 function zoomToBV(key){if(!map||!GEO)return;const c=getFeatureCenter(key);if(!c)return;map.flyTo({center:c,zoom:Math.max(map.getZoom(),15.5),duration:800,essential:true});}
 function panelHover(key){if(!map||!map.getSource('bv'))return;if(panelHovId!==null){map.setFeatureState({source:'bv',id:panelHovId},{hover:false});panelHovId=null;}if(key===null){if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}return;}if(GEO){const idx=GEO.features.findIndex(f=>f.properties.id_bv===String(key));if(idx>=0){panelHovId=idx;map.setFeatureState({source:'bv',id:panelHovId},{hover:true});}}const c=getFeatureCenter(key);if(c&&popup){popup._panelSource=true;popup.setLngLat(c).setHTML(buildTT(key)).addTo(map);}}
@@ -542,11 +547,17 @@ window._exportGetState = function() {
 async function init(){
   document.getElementById('lt').textContent='Chargement des données…';
   try{const r=await fetch('geo.json?v='+Date.now());GEO=await r.json();}catch(e){console.error('geo.json introuvable !',e);}
-  try{const r=await fetch(`${DATA_BASE}elections.json?v=`+Date.now());ELECTIONS=await r.json();}catch(e){console.error('elections.json introuvable !',e);ELECTIONS=[];}
+  try{
+    const r=await fetch(`${DATA_BASE}elections.json?v=`+Date.now());
+    const txt=await r.text();
+    // Strip single-line comments so JSONC files work
+    const clean=txt.replace(/\/\/[^\n]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'');
+    ELECTIONS=JSON.parse(clean);
+  }catch(e){console.error('elections.json introuvable ou invalide:',e);ELECTIONS=[];}
   if(ELECTIONS.length>0){CUR_EID=ELECTIONS[0].id;document.getElementById('el').textContent=ELECTIONS[0].label;}
   buildDrop();
   if(CUR_EID)await loadCSV(CUR_EID);
-  renderGlobal();renderBVGrid();buildFC();
+  if(ELECTIONS.length>0&&CUR_DATA){renderGlobal();renderBVGrid();buildFC();}else{document.getElementById('ld').classList.add('h');}
   loadRPLS().then(()=>{renderBVGrid();updateHLMLegend();if(mode==='hlm')updateColors();if(map&&map.loaded())addHLMLayer();});
   initMap();
 }
