@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Observatoire électoral — Villejuif</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -37,6 +39,41 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .mbtn{background:transparent;color:rgba(255,255,255,.45);border:none;border-bottom:2px solid transparent;padding:6px 10px 8px;font-family:var(--fb);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .mbtn:hover{color:rgba(255,255,255,.8)}
 .mbtn.active{color:#fff;border-bottom-color:var(--ac);font-weight:600}
+
+/* ── Export button ── */
+#export-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);font-family:var(--fb);white-space:nowrap;transition:all .2s;flex-shrink:0;margin-left:auto}
+#export-btn:hover{background:var(--acl);border-color:var(--ac);color:#fff}
+#export-btn svg{flex-shrink:0;opacity:.7}
+#export-btn:hover svg{opacity:1}
+
+/* ── Export modal ── */
+#exp-modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center}
+#exp-modal.vis{display:flex}
+#exp-box{background:#1a1b1f;border:1px solid rgba(255,255,255,.14);border-radius:12px;width:400px;max-width:94vw;box-shadow:0 16px 64px rgba(0,0,0,.6);overflow:hidden}
+#exp-hdr{padding:16px 20px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+#exp-hdr h3{font-size:14px;font-weight:700;color:#fff}
+#exp-close{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;transition:color .15s}
+#exp-close:hover{color:#fff}
+#exp-body{padding:16px 20px}
+.exp-section{margin-bottom:16px}
+.exp-section-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:10px}
+.exp-check{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:12px;color:rgba(255,255,255,.75);transition:color .15s;user-select:none}
+.exp-check:hover{color:#fff}
+.exp-check input[type=checkbox]{width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)}
+.exp-target-row{display:flex;gap:6px;flex-wrap:wrap}
+.exp-target-btn{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 11px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:var(--fb);transition:all .2s}
+.exp-target-btn:hover{background:rgba(255,255,255,.09);color:rgba(255,255,255,.8)}
+.exp-target-btn.active{background:var(--acl);border-color:var(--ac);color:#fff}
+#exp-filename{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 10px;font-size:11px;font-family:var(--fb);color:rgba(255,255,255,.6);margin-top:10px}
+#exp-filename:focus{outline:none;border-color:var(--ac)}
+#exp-footer{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+.exp-fmt-btn{flex:1;padding:9px;border-radius:var(--rs);border:1px solid var(--bd2);background:rgba(255,255,255,.05);font-size:12px;font-weight:700;font-family:var(--fb);cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.exp-fmt-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.25);color:#fff}
+.exp-fmt-btn.png{color:#64b5f6}
+.exp-fmt-btn.pdf{color:#ef9a9a}
+.exp-fmt-btn:disabled{opacity:.35;cursor:not-allowed}
+#exp-progress{font-size:10px;color:var(--tm);flex:1;text-align:center;display:none}
+
 #map{position:fixed;top:var(--nav);left:0;right:var(--panel);bottom:28px;z-index:0}
 #panel{position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:20}
 #tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0}
@@ -154,7 +191,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 @keyframes rot{to{transform:rotate(360deg)}}
 .st{margin-top:16px;font-size:11px;color:rgba(255,255,255,.3)}
 #hlm-status{font-size:9px;color:var(--tm);margin-left:6px;font-style:italic}
-/* ── Évolutions overlay ──────────────────────────────────────────────────── */
+/* ── Évolutions overlay ── */
 #evol-ov{display:none;position:fixed;top:var(--nav);left:0;right:0;bottom:0;z-index:15;background:var(--bg);flex-direction:column}
 #evol-ov.vis{display:flex}
 #evol-hdr{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--bd);flex-shrink:0;flex-wrap:wrap}
@@ -226,7 +263,50 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
     <button class="mbtn"        data-mode="hlm"           onclick="setMode('hlm')">Log. sociaux</button>
     <button class="mbtn"        data-mode="evol"          onclick="setMode('evol')">Évolutions</button>
   </div>
+  <button id="export-btn" onclick="openExportModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Export
+  </button>
 </nav>
+
+<!-- Export modal -->
+<div id="exp-modal" onclick="closeExportModalBg(event)">
+  <div id="exp-box">
+    <div id="exp-hdr">
+      <h3>Exporter la visualisation</h3>
+      <button id="exp-close" onclick="closeExportModal()">✕</button>
+    </div>
+    <div id="exp-body">
+      <div class="exp-section">
+        <div class="exp-section-title">Visualisation à exporter</div>
+        <div class="exp-target-row" id="exp-targets">
+          <button class="exp-target-btn active" data-target="map" onclick="selectExpTarget(this)">🗺 Carte</button>
+          <button class="exp-target-btn" data-target="panel" onclick="selectExpTarget(this)">📊 Résultats</button>
+          <button class="exp-target-btn" data-target="evol" onclick="selectExpTarget(this)">🔀 Évolutions</button>
+        </div>
+      </div>
+      <div class="exp-section">
+        <div class="exp-section-title">Éléments à inclure</div>
+        <label class="exp-check"><input type="checkbox" id="exp-opt-title" checked> Titre & élection</label>
+        <label class="exp-check"><input type="checkbox" id="exp-opt-legend" checked> Légende</label>
+        <label class="exp-check"><input type="checkbox" id="exp-opt-sources" checked> Sources</label>
+        <label class="exp-check"><input type="checkbox" id="exp-opt-table"> Tableau données brutes</label>
+      </div>
+      <div class="exp-section">
+        <div class="exp-section-title">Nom du fichier</div>
+        <input id="exp-filename" type="text" placeholder="villejuif_carte_2026" spellcheck="false">
+      </div>
+    </div>
+    <div id="exp-footer">
+      <span id="exp-progress">Génération en cours…</span>
+      <button class="exp-fmt-btn png" onclick="runExport('png')">⬇ PNG</button>
+      <button class="exp-fmt-btn pdf" onclick="runExport('pdf')">⬇ PDF</button>
+    </div>
+  </div>
+</div>
+
 <div id="map"></div>
 <div id="leg"></div>
 <div id="pleg"><h4 id="pl-t">Participation</h4><div class="gb" id="pl-g"></div><div class="gl" id="pl-l"></div></div>
@@ -318,7 +398,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
       <div id="sk-info-pop">
         <h5>Comment les flux sont estimés</h5>
         <p><strong>Régression OLS écologique</strong> sur les bureaux de vote communs aux deux élections. Pour chaque liste cible, on régresse ses voix bureau par bureau sur les voix de chaque liste source.</p>
-        <p>Les coefficients indiquent : dans les bureaux où la liste X était forte, la liste Y tend-elle à l'être aussi ? Multipliés par les totaux réels, ils donnent les flux en voix absolues.</p>
+        <p>Les coefficients indiquent : dans les bureaux où la liste X était forte, la liste Y tend-elle à l'être aussi ? Multipliés par les totaux réels, ils donnent les flux en voix absolues.</p>
         <p><strong>Plus fiable</strong> entre deux tours d'un même scrutin (même électorat, même jour). <strong>Plus fragile</strong> entre deux élections différentes, où la corrélation spatiale reflète autant la géographie sociale que le vrai report individuel.</p>
         <div class="warn-line">Les flux affichés sont des <strong>estimations statistiques</strong>, pas des comportements individuels observés. Ils mesurent des similarités de bureau à bureau, pas des transferts certifiés.</div>
       </div>
@@ -352,6 +432,10 @@ let map,popup,hovId=null,panelHovId=null;
 const DATA_CACHE=new Map();
 let hlmByBV=new Map(),hlmLoaded=false,hlmTotalLogements=0,hlmReady=false;
 const HLM_COLOR='#f48fb1';
+
+/* ── Export state ── */
+let _expTarget='map';
+let _candLegendState=null; // stores {col, avg, mx, nm} for candidate mode legend
 
 /* ── utils ── */
 const fP=v=>v.toFixed(1).replace('.',',')+' %';
@@ -420,8 +504,50 @@ body+=`</div>`;
 if(corrs.length>0){body+=`<div class="cps"><div class="cpst">Corrélations avec les autres candidats</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:10px">r de Pearson sur 34 BV</div>`;corrs.forEach(cr=>{const abs=Math.abs(cr.r),fc=cr.r>=0?'#1565C0':'#C62828',left=cr.r>=0?50:50-abs*50,w=abs*50,tc2=ctxt(cr.color),str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="ccr"><div class="ccd" style="background:${cr.color}"></div><div class="ccn">${esc(cr.nom)} <span style="background:${cr.color};color:${tc2};border-radius:3px;padding:1px 4px;font-size:8px;font-weight:700">${esc(cr.nuance)}</span></div><div class="ccg"><div class="ccc"></div><div class="ccf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="ccv" style="color:${fc}">${(cr.r>=0?'+':'')+cr.r.toFixed(2)}</div><div style="font-size:9px;color:var(--tm);min-width:52px;text-align:right">${str}</div></div>`;});body+=`</div>`;}
 if(hlmReady&&hlmByBV.size>0){const hlmX=keys.map(r=>hlmPctForBV(r.bv)),candY=keys.map(r=>r.exp>0?(parseInt(r[nuance])||0)/r.exp*100:0),rv=pearson(hlmX,candY),abs=Math.abs(rv),fc=rv>=0?'#1565C0':'#D32F2F',left=rv>=0?50:50-abs*50,w=abs*50,sign=rv>=0?'+':'',str=abs<.2?'très faible':abs<.4?'faible':abs<.6?'modérée':abs<.8?'forte':'très forte';body+=`<div class="cps"><div class="cpst" style="color:${HLM_COLOR}">Corrélation logements sociaux</div><div style="font-size:9px;color:rgba(255,255,255,.3);margin-bottom:8px">r de Pearson : % HLM par BV × score ${esc(nm)}</div><div class="cr"><div class="cl"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${HLM_COLOR};margin-right:4px;vertical-align:middle"></span>% Logements sociaux</div><div class="cg"><div class="cgc"></div><div class="cgf" style="left:${left}%;width:${w}%;background:${fc}"></div></div><div class="cv" style="color:${fc}">${sign}${rv.toFixed(3)}</div><div class="cs">${str}</div></div></div>`;}
 document.getElementById('cp-b').innerHTML=body;document.querySelectorAll('.pane').forEach(p=>{p.style.display='none';p.classList.remove('active');});document.getElementById('cp').style.display='block';document.getElementById('tc').scrollTop=0;setCandMode(nuance,col,nm,mx,gp);}
-function closeCP(){curCand=null;document.getElementById('cp').style.display='none';const ns=['r','b','s','c'],tabs=document.querySelectorAll('.tab');tabs.forEach((t,i)=>{if(t.classList.contains('active')){const p=document.getElementById('pane-'+ns[i]);if(p){p.style.display='';p.classList.add('active');}}});setMode(mode);}
-function setCandMode(nuance,col,nm,mx,avg){const e=['match',['get','id_bv']];(CUR_DATA||[]).forEach(r=>{const v=parseInt(r[nuance])||0,t=r.exp>0&&mx>0?(v/r.exp*100)/mx:0;e.push(parseInt(r.bv),blend(col,t));});e.push('#1e1e23');if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);document.getElementById('leg').style.display='none';document.getElementById('pleg').style.display='none';document.getElementById('hleg').style.display='none';const cl=document.getElementById('cleg');cl.style.display='';document.getElementById('cl-t').textContent=`${nm} \u2014 intensité`;document.getElementById('cl-t').style.color=col;document.getElementById('cl-g').style.background=`linear-gradient(to right,#1e1e23,${col})`;document.getElementById('cl-l').innerHTML=`<span>0 %</span><span>${fP(avg)} moy.</span><span>${fP(mx)} max</span>`;}
+function closeCP(){curCand=null;_candLegendState=null;document.getElementById('cp').style.display='none';const ns=['r','b','s','c'],tabs=document.querySelectorAll('.tab');tabs.forEach((t,i)=>{if(t.classList.contains('active')){const p=document.getElementById('pane-'+ns[i]);if(p){p.style.display='';p.classList.add('active');}}});setMode(mode);}
+
+/* ── Candidate mode: divergent legend centred on average ── */
+function setCandMode(nuance,col,nm,mx,avg){
+  _candLegendState={col,avg,mx,nm,nuance};
+  const e=['match',['get','id_bv']];
+  (CUR_DATA||[]).forEach(r=>{
+    const v=parseInt(r[nuance])||0,pct=r.exp>0?v/r.exp*100:0;
+    e.push(parseInt(r.bv),blendDivergent(col,pct,avg,mx));
+  });
+  e.push('#1e1e23');
+  if(map&&map.getSource('bv'))map.setPaintProperty('bv-fill','fill-color',e);
+  document.getElementById('leg').style.display='none';
+  document.getElementById('pleg').style.display='none';
+  document.getElementById('hleg').style.display='none';
+  // Show divergent legend
+  const cl=document.getElementById('cleg');
+  cl.style.display='';
+  document.getElementById('cl-t').textContent=`${nm} — intensité`;
+  document.getElementById('cl-t').style.color=col;
+  // Build divergent gradient: dark at 0, neutral grey at avg, full color at max
+  const avgRatio=mx>0?avg/mx:0.5;
+  const avgPct=Math.round(avgRatio*100);
+  document.getElementById('cl-g').style.background=
+    `linear-gradient(to right,#1a1b1f 0%,#3a3b40 ${avgPct}%,${col} 100%)`;
+  document.getElementById('cl-l').innerHTML=
+    `<span>0 %</span><span style="color:${col};font-weight:600">▼ ${fP(avg)}</span><span>${fP(mx)}</span>`;
+}
+
+/* Maps a candidate % score to a colour using divergent logic centred on avg */
+function blendDivergent(hex,pct,avg,mx){
+  if(mx<=0)return'#1e1e23';
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  // below avg: interpolate #1a1b1f -> neutral mid grey
+  // above avg: interpolate neutral mid grey -> full colour
+  if(pct<=avg){
+    const t=avg>0?pct/avg:0;
+    return`rgb(${Math.round(26+(58-26)*t)},${Math.round(27+(59-27)*t)},${Math.round(31+(64-31)*t)})`;
+  }else{
+    const t=mx>avg?(pct-avg)/(mx-avg):1;
+    return`rgb(${Math.round(58+(r-58)*t)},${Math.round(59+(g-59)*t)},${Math.round(64+(b-64)*t)})`;
+  }
+}
+
 function showBV(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return;const bv=computeBV(row),hlm=hlmForBV(key);const hlmInfo=hlm&&hlm.count>0?`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(244,143,177,.1);border:1px solid rgba(244,143,177,.2);border-radius:3px;padding:2px 6px;font-size:9px;color:${HLM_COLOR};font-weight:600;margin-left:6px">⬤ ${fN(hlm.count)} lgts sociaux (${fP(hlm.pct)} commune)</span>`:'';document.getElementById('bvd-t').innerHTML=`Bureau ${parseInt(key).toString().padStart(2,'0')}${hlmInfo}`;document.getElementById('bvd-m').innerHTML=`${bv.lieu?`<strong>${esc(bv.lieu)}</strong><br>`:''}${fN(bv.inscrits)} inscrits · ${fN(bv.votants)} votants · ${bv.blancs} blancs · ${bv.nuls} nuls`;rKPIs(document.getElementById('bvd-k'),bv);rBal(document.getElementById('bvd-b'),bv);rBars(document.getElementById('bvd-r'),bv.lists,bv.exprimes,true,true);document.querySelectorAll('.bvc').forEach(c=>c.classList.toggle('active',c.dataset.bv===String(key)));const d=document.getElementById('bvd');d.style.display='block';d.offsetHeight;d.classList.add('vis');d.scrollTop=0;if(popup&&popup._panelSource){popup.remove();popup._panelSource=false;}zoomToBV(key);}
 function closeBV(){const d=document.getElementById('bvd');d.classList.remove('vis');setTimeout(()=>{if(!d.classList.contains('vis'))d.style.display='none';},300);document.querySelectorAll('.bvc').forEach(c=>c.classList.remove('active'));zoomToCity();}
 function zoomToCity(){if(!map)return;map.flyTo({center:[2.362,48.793],zoom:13.3,duration:700,essential:true});}
@@ -464,7 +590,7 @@ html+=`<div class="cst">Matrice (heatmap)</div><div style="overflow-x:auto"><tab
 function buildTT(key){const row=CUR_DATA&&CUR_DATA.find(r=>r.bv===String(key));if(!row)return'';const bv=computeBV(row),hlm=hlmForBV(key);let rows=bv.lists.slice(0,3).map(l=>`<div class="tt-r"><div class="tt-d" style="background:${l.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.nom)}</span><span style="font-weight:700;color:${l.color};min-width:40px;text-align:right">${fP(l.pct)}</span></div>`).join('');if(curCand){const v=parseInt(row[curCand])||0,p=row.exp>0?v/row.exp*100:0,c=ccolor(curCand);rows=`<div class="tt-r" style="background:rgba(255,255,255,.04);border-radius:3px;padding:2px 4px;margin-bottom:4px"><div class="tt-d" style="background:${c}"></div><span style="flex:1;color:${c};font-weight:700">${esc(cname(curCand))}</span><span style="font-weight:700;color:${c}">${fP(p)}</span></div>`+rows;}const hlmRow=hlm&&hlm.count>0?`<div style="margin-top:5px;padding-top:5px;border-top:1px solid var(--bd)"><span class="tt-hlm">⬤ ${fN(hlm.count)} lgts sociaux · ${fP(hlm.pct)} commune</span></div>`:'';return`<div class="tt-t">BV ${parseInt(key).toString().padStart(2,'0')}${bv.lieu?` \u2014 ${esc(bv.lieu)}`:''}</div><div class="tt-m">Part. ${fP(bv.participation)} · ${fN(bv.inscrits)} inscrits</div>${rows}${hlmRow}`;}
 function buildDrop(){const groups={};ELECTIONS.forEach(e=>{const yr=e.date?e.date.slice(-4):'',type=e.label.split(' ')[0],gk=type+yr;if(!groups[gk])groups[gk]={title:type+' '+yr,items:[]};groups[gk].items.push(e);});let h='';Object.values(groups).forEach(g=>{h+=`<div class="eg-title">${esc(g.title)}</div>`;g.items.forEach(e=>h+=`<button class="ei${e.id===CUR_EID?' active':''}" data-eid="${e.id}" onclick="selElection('${e.id}')">${esc(e.label)}<span class="ei-r"><span>${e.date||''}</span><span>${e.participation?fP(e.participation):''}</span></span></button>`);});document.getElementById('ed').innerHTML=h;}
 function toggleDrop(){const btn=document.getElementById('eb'),drop=document.getElementById('ed');const o=drop.classList.toggle('open');btn.classList.toggle('open',o);if(o){const close=()=>{drop.classList.remove('open');btn.classList.remove('open');document.removeEventListener('click',close);};setTimeout(()=>document.addEventListener('click',close),10);}}
-async function selElection(eid){if(eid===CUR_EID)return;document.getElementById('lt').textContent=`Chargement ${eid}…`;const ld=document.getElementById('ld');ld.style.transition='opacity .2s';ld.classList.remove('h');CUR_EID=eid;excl.clear();curCand=null;document.getElementById('el').textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;document.getElementById('ed').classList.remove('open');document.getElementById('eb').classList.remove('open');buildDrop();await loadCSV(eid);closeBV();document.getElementById('cp').style.display='none';document.querySelectorAll('.pane').forEach(p=>{p.style.display='';p.classList.remove('active');});document.getElementById('pane-r').classList.add('active');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));renderGlobal();renderBVGrid();buildFC();setMode(mode);setTimeout(()=>ld.classList.add('h'),150);}
+async function selElection(eid){if(eid===CUR_EID)return;document.getElementById('lt').textContent=`Chargement ${eid}…`;const ld=document.getElementById('ld');ld.style.transition='opacity .2s';ld.classList.remove('h');CUR_EID=eid;excl.clear();curCand=null;_candLegendState=null;document.getElementById('el').textContent=ELECTIONS.find(e=>e.id===eid)?.label||eid;document.getElementById('ed').classList.remove('open');document.getElementById('eb').classList.remove('open');buildDrop();await loadCSV(eid);closeBV();document.getElementById('cp').style.display='none';document.querySelectorAll('.pane').forEach(p=>{p.style.display='';p.classList.remove('active');});document.getElementById('pane-r').classList.add('active');document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===0));renderGlobal();renderBVGrid();buildFC();setMode(mode);setTimeout(()=>ld.classList.add('h'),150);}
 function initMap(){map=new maplibregl.Map({container:'map',style:{version:8,sources:{carto:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'],tileSize:256,attribution:'© CARTO © OSM'},lbl:{type:'raster',tiles:['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}@2x.png'],tileSize:256}},layers:[{id:'carto',type:'raster',source:'carto'},{id:'lbl',type:'raster',source:'lbl'}],glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'},center:[2.362,48.793],zoom:13.3,minZoom:12,maxZoom:18});
 map.on('load',()=>{map.addSource('bv',{type:'geojson',data:GEO,generateId:true});map.addLayer({id:'bv-fill',type:'fill',source:'bv',paint:{'fill-color':buildColorExpr(),'fill-opacity':['case',['boolean',['feature-state','hover'],false],0.9,0.72]}});map.addLayer({id:'bv-border',type:'line',source:'bv',paint:{'line-color':['case',['boolean',['feature-state','hover'],false],'#fff','rgba(255,255,255,0.35)'],'line-width':['case',['boolean',['feature-state','hover'],false],2,0.6]}});
 popup=new maplibregl.Popup({closeButton:false,closeOnClick:false,maxWidth:'270px',offset:10});
@@ -472,292 +598,312 @@ map.on('mouseenter','bv-fill',()=>map.getCanvas().style.cursor='pointer');map.on
 if(hlmLoaded&&hlmByBV.size>0)addHLMLayer();
 document.getElementById('ld').classList.add('h');renderWinLeg();});}
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   ÉVOLUTIONS \u2014 OLS écologique + Sankey
-══════════════════════════════════════════════════════════════════════════════ */
-
-/* Position sur axe G/D pour chaque bloc (0=extreme gauche .. 5=extreme droite) */
+/* ══════════════════════════════════════════════════════════════════════════
+   ÉVOLUTIONS — OLS écologique + Sankey
+══════════════════════════════════════════════════════════════════════════ */
 const BLOC_POS={ex_gauche:0,gauche_rad:1,gauche:2,centre:3,droite:4,ex_droite:5};
-function blocPos(nuance,eid){
-  const el=ELECTIONS.find(e=>e.id===eid)||{};
-  const c=(el.candidates||[]).find(c=>c.nuance===nuance);
-  if(!c||!c.bloc)return 2.5;
-  return BLOC_POS[c.bloc]!==undefined?BLOC_POS[c.bloc]:2.5;
-}
-function ideoDist(nuanceA,eidA,nuanceB,eidB){
-  if(nuanceA==='__ABS__'||nuanceB==='__ABS__')return 0.15;
-  return Math.abs(blocPos(nuanceA,eidA)-blocPos(nuanceB,eidB))/5;
-}
-
-/* Gauss-Jordan avec Ridge differencie : lambda[i] penalite par variable */
-function solveLSRidge(A,b,lambda){
-  const n=b.length;
-  const M=A.map((row,i)=>[...row.map((v,j)=>i===j?v+lambda[i]:v),b[i]]);
-  for(let c=0;c<n;c++){
-    let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;
-    [M[c],M[mx]]=[M[mx],M[c]];
-    const piv=M[c][c];
-    if(Math.abs(piv)<1e-12){for(let j=0;j<=n;j++)M[c][j]=j===c?1:0;continue;}
-    for(let j=c;j<=n;j++)M[c][j]/=piv;
-    for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}
-  }
-  return M.map(r=>r[n]);
-}
-
-/* OLS ecologique pondere + Ridge ideologique.
-   Poids par bureau : bureaux avec fort taux HLM ou fort differentiel de participation
-   portent plus de poids (ils sont plus discriminants socialement).
-   Penalite Ridge : proportionnelle a dist_ideo(source, cible)^2 \u2014 rabat les
-   reports improbables (ex-gauche vers ex-droite) vers zero. */
-function computeOLS(eidA,eidB,dataA,dataB){
-  const alpha=parseFloat(document.getElementById('ev-ideo')?.value||0);
-  const elA=ELECTIONS.find(e=>e.id===eidA)||{},elB=ELECTIONS.find(e=>e.id===eidB)||{};
-  const cA=elA.candidates||[],cB=elB.candidates||[];
-  const mapA=new Map(dataA.map(r=>[r.bv,r])),mapB=new Map(dataB.map(r=>[r.bv,r]));
-  const bvs=[...mapA.keys()].filter(k=>mapB.has(k));
-  if(bvs.length<3)return null;
-  const n=bvs.length;
-
-  const totA={},totB={};
-  cA.forEach(c=>{totA[c.nuance]=dataA.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
-  cB.forEach(c=>{totB[c.nuance]=dataB.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});
-  const absA=dataA.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
-  const absB=dataB.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);
-
-  /* Poids par bureau : HLM + differentiel participation inter-elections */
-  const K_HLM=2,K_PART=3;
-  const weights=bvs.map(bv=>{
-    const rA=mapA.get(bv),rB=mapB.get(bv);
-    const pHLM=hlmReady?hlmPctForBV(bv):0;
-    const partA=rA.ins>0?(rA.vot||0)/rA.ins*100:0;
-    const partB=rB.ins>0?(rB.vot||0)/rB.ins*100:0;
-    return 1+K_HLM*(pHLM/100)+K_PART*(Math.abs(partA-partB)/100);
-  });
-  const wSum=weights.reduce((s,w)=>s+w,0);
-  const wNorm=weights.map(w=>w*n/wSum);
-
-  const vA={},vB={};
-  cA.forEach(c=>{vA[c.nuance]=bvs.map(bv=>parseInt(mapA.get(bv)[c.nuance])||0);});
-  vA['__ABS__']=bvs.map(bv=>Math.max(0,(mapA.get(bv).ins||0)-(mapA.get(bv).vot||0)));
-  cB.forEach(c=>{vB[c.nuance]=bvs.map(bv=>parseInt(mapB.get(bv)[c.nuance])||0);});
-  vB['__ABS__']=bvs.map(bv=>Math.max(0,(mapB.get(bv).ins||0)-(mapB.get(bv).vot||0)));
-
-  const srcA=[...cA.map(c=>c.nuance),'__ABS__'];
-  const tgtB=[...cB.map(c=>c.nuance),'__ABS__'];
-
-  /* Variance ponderee de chaque source \u2014 sert a calibrer les penalites */
-  const xScale=srcA.map(na=>{
-    const x=vA[na];
-    const mu=x.reduce((s,v,i)=>s+v*wNorm[i],0)/n;
-    const va=x.reduce((s,v,i)=>s+wNorm[i]*(v-mu)*(v-mu),0)/n;
-    return Math.max(va,1);
-  });
-
-  const flows={};
-  tgtB.forEach(nb=>{
-    const y=vB[nb];
-    const X=srcA.map(na=>vA[na]);
-    const p=srcA.length;
-
-    /* X'WX pondere */
-    const XtWX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>{
-      let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*X[j][k];return s;
-    }));
-    /* X'Wy pondere */
-    const XtWy=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*y[k];return s;});
-
-    /* Penalite = base + alpha * dist_ideo^2 * echelle_variance */
-    const lambda=srcA.map((na,i)=>{
-      const d=ideoDist(na,eidA,nb,eidB);
-      return 1e-4*xScale[i]+alpha*d*d*xScale[i];
-    });
-
-    const beta=solveLSRidge(XtWX,XtWy,lambda);
-    flows[nb]={};
-    srcA.forEach((na,i)=>{
-      const tot=na==='__ABS__'?absA:(totA[na]||0);
-      flows[nb][na]=Math.max(0,beta[i]*tot);
-    });
-  });
-
-  
-  return{flows,totA,totB,absA,absB,cA,cB,bvCount:bvs.length,elA,elB};
-}
-
-function populateEvolSelects(){
-  const sa=document.getElementById('ev-a'),sb=document.getElementById('ev-b');
-  const va=sa.value,vb=sb.value;
-  const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join('');
-  sa.innerHTML=opts;sb.innerHTML=opts;
-  if(ELECTIONS.length>=2){
-    sa.value=va||ELECTIONS[0].id;
-    sb.value=vb||ELECTIONS[1].id;
-    if(sa.value===sb.value&&ELECTIONS.length>1)sb.value=ELECTIONS[1].id;
-  }
-}
-
-async function renderEvol(){
-  const eidA=document.getElementById('ev-a').value;
-  const eidB=document.getElementById('ev-b').value;
-  const thresh=parseInt(document.getElementById('ev-thr').value)||0;
-  const info=document.getElementById('evol-info');
-  if(!eidA||!eidB||eidA===eidB){
-    document.getElementById('sk-svg').innerHTML='';
-    info.textContent='Sélectionnez deux élections différentes.';
-    return;
-  }
-  info.textContent='Calcul OLS en cours…';
-  const[dataA,dataB]=await Promise.all([loadCSVById(eidA),loadCSVById(eidB)]);
-  if(!dataA.length||!dataB.length){info.textContent='Données manquantes.';return;}
-  const res=computeOLS(eidA,eidB,dataA,dataB);
-  if(!res){info.textContent='Bureaux communs insuffisants.';return;}
-  info.textContent=`${res.bvCount} bureaux communs · OLS écologique · seuil ${fN(thresh)} voix`;
-  drawSankey(res,thresh);
-  renderEvolSide(res,thresh);
-}
-
-function drawSankey(res,thresh){
-  const svg=document.getElementById('sk-svg');
-  const wrap=document.getElementById('sk-wrap');
-  const W=wrap.clientWidth||900,H=wrap.clientHeight||580;
-  const{flows,totA,totB,absA,absB,cA,cB,elA,elB}=res;
-  const NS='http://www.w3.org/2000/svg';
-
-  /* noeuds avec totaux */
-  const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];
-  const tgtNodes=[...cB.map(c=>({...c,_tot:totB[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absB}];
-
-  const PAD=44,NW=14,GAP=5,LBL_W=140;
-  // source nodes start at LBL_W, target nodes end at W-LBL_W
-  const X_SRC=LBL_W, X_TGT=W-LBL_W-NW;
-  const areaH=H-PAD*2;
-
-  function layout(nodes,cx){
-    const total=nodes.reduce((s,n)=>s+n._tot,0)||1;
-    const sc=(areaH-GAP*(nodes.length-1))/total;
-    let y=PAD;
-    nodes.forEach(n=>{n._h=Math.max(3,Math.round(n._tot*sc));n._y=y;n._cx=cx;y+=n._h+GAP;});
-  }
-  layout(srcNodes,X_SRC);
-  layout(tgtNodes,X_TGT);
-
-  /* accumulateurs de position */
-  const outY={};srcNodes.forEach(n=>outY[n.nuance]=n._y);
-  const inY={};tgtNodes.forEach(n=>inY[n.nuance]=n._y);
-
-  /* liens */
-  const links=[];
-  srcNodes.forEach(sa=>{
-    tgtNodes.forEach(tb=>{
-      const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
-      if(v<thresh)return;
-      const hA=sa._tot>0?sa._h*v/sa._tot:0;
-      const hB=tb._tot>0?tb._h*v/tb._tot:0;
-      links.push({sa,tb,v,hA,hB,y0:outY[sa.nuance],y1:inY[tb.nuance]});
-      outY[sa.nuance]+=hA;
-      inY[tb.nuance]+=hB;
-    });
-  });
-
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.setAttribute('width',W);svg.setAttribute('height',H);
-  svg.innerHTML='';
-
-  /* dégradés */
-  const defs=document.createElementNS(NS,'defs');
-  links.forEach((lk,i)=>{
-    const g=document.createElementNS(NS,'linearGradient');
-    g.setAttribute('id',`g${i}`);g.setAttribute('x1','0%');g.setAttribute('x2','100%');g.setAttribute('y1','0%');g.setAttribute('y2','0%');
-    const s1=document.createElementNS(NS,'stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',lk.sa.color);s1.setAttribute('stop-opacity','0.5');
-    const s2=document.createElementNS(NS,'stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',lk.tb.color);s2.setAttribute('stop-opacity','0.4');
-    g.appendChild(s1);g.appendChild(s2);defs.appendChild(g);
-  });
-  svg.appendChild(defs);
-
-  /* flux bezier */
-  links.forEach((lk,i)=>{
-    const x0=lk.sa._cx+NW,x1=lk.tb._cx,cx=(x0+x1)/2;
-    const y0t=lk.y0,y0b=lk.y0+lk.hA,y1t=lk.y1,y1b=lk.y1+lk.hB;
-    const path=document.createElementNS(NS,'path');
-    path.setAttribute('d',`M${x0} ${y0t} C${cx} ${y0t},${cx} ${y1t},${x1} ${y1t} L${x1} ${y1b} C${cx} ${y1b},${cx} ${y0b},${x0} ${y0b}Z`);
-    path.setAttribute('fill',`url(#g${i})`);
-    path.setAttribute('stroke','none');
-    path.style.opacity='.85';path.style.cursor='pointer';path.style.transition='opacity .15s';
-    const nomA=lk.sa.nuance==='__ABS__'?'Abstentions':lk.sa.nom;
-    const nomB=lk.tb.nuance==='__ABS__'?'Abstentions':lk.tb.nom;
-    const pctA=lk.sa._tot>0?lk.v/lk.sa._tot*100:0;
-    const pctB=lk.tb._tot>0?lk.v/lk.tb._tot*100:0;
-    const tipHtml=`<strong style="color:${lk.sa.color}">${esc(nomA)}</strong> <span style="color:var(--tm)">→</span> <strong style="color:${lk.tb.color}">${esc(nomB)}</strong><br><span style="color:var(--tm)">Flux estimé :</span> <strong>${fN(lk.v)} voix</strong><br><span style="font-size:10px;color:var(--tm)">${fP(pctA)} de la source · ${fP(pctB)} de la cible</span>`;
-    path.addEventListener('mouseenter',e=>{path.style.opacity='1';showTip(e,tipHtml);});
-    path.addEventListener('mousemove',moveTip);
-    path.addEventListener('mouseleave',()=>{path.style.opacity='.85';hideTip();});
-    svg.appendChild(path);
-  });
-
-  /* noeuds + labels source */
-  srcNodes.forEach(n=>{
-    const rect=document.createElementNS(NS,'rect');
-    rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);
-    rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));
-    rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');
-    svg.appendChild(rect);
-    const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
-    const short=nom.length>22?nom.substring(0,20)+'…':nom;
-    const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',n._cx-10);t.setAttribute('y',n._y+n._h/2);
-    t.setAttribute('text-anchor','end');t.setAttribute('dominant-baseline','central');
-    t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
-    t.textContent=short;svg.appendChild(t);
-    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx-10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','end');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
-  });
-
-  /* noeuds + labels cible */
-  tgtNodes.forEach(n=>{
-    const rect=document.createElementNS(NS,'rect');
-    rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);
-    rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));
-    rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');
-    svg.appendChild(rect);
-    const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;
-    const short=nom.length>22?nom.substring(0,20)+'…':nom;
-    const t=document.createElementNS(NS,'text');
-    t.setAttribute('x',n._cx+NW+10);t.setAttribute('y',n._y+n._h/2);
-    t.setAttribute('text-anchor','start');t.setAttribute('dominant-baseline','central');
-    t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');
-    t.textContent=short;svg.appendChild(t);
-    if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx+NW+10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','start');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}
-  });
-
-  /* titres colonnes */
-  function colTitle(x,label){const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',PAD-16);t.setAttribute('text-anchor','middle');t.setAttribute('fill','#b8282e');t.setAttribute('font-size','11');t.setAttribute('font-weight','600');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=label;svg.appendChild(t);}
-  colTitle(X_SRC+NW/2,(elA.label||'')+' \u00b7 '+(elA.date||''));
-  colTitle(X_TGT+NW/2,(elB.label||'')+' \u00b7 '+(elB.date||''));
-}
-
-function renderEvolSide(res,thresh){
-  const{flows,totA,absA,cA,cB}=res;
-  const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];
-  const tgtNodes=[...cB.map(c=>({...c,_tot:(res.totB[c.nuance]||0)})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:res.absB}];
-  let html='';
-  srcNodes.filter(s=>s._tot>0).forEach(sa=>{
-    const nom=sa.nuance==='__ABS__'?'Abstentions':sa.nom;
-    html+=`<div class="fl-block"><div class="fl-hdr"><div class="fl-dot" style="background:${sa.color}"></div><span class="fl-nm" style="color:${sa.color}">${esc(nom)}</span><span class="fl-tot">${fN(sa._tot)}</span></div>`;
-    tgtNodes.forEach(tb=>{
-      const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);
-      if(v<Math.max(1,thresh/2))return;
-      const pct=sa._tot>0?v/sa._tot*100:0;
-      const nomB=tb.nuance==='__ABS__'?'Abstentions':tb.nom;
-      html+=`<div class="fl-row"><div class="fl-rd" style="background:${tb.color}"></div><span class="fl-rl" title="${esc(nomB)}">${esc(nomB)}</span><span class="fl-rv">${fN(v)}</span><span class="fl-rp">${fP(pct)}</span></div>`;
-    });
-    html+=`</div>`;
-  });
-  document.getElementById('ev-flows').innerHTML=html||'<div style="color:var(--tm);font-size:11px">Aucun flux au-dessus du seuil.</div>';
-}
-
+function blocPos(nuance,eid){const el=ELECTIONS.find(e=>e.id===eid)||{};const c=(el.candidates||[]).find(c=>c.nuance===nuance);if(!c||!c.bloc)return 2.5;return BLOC_POS[c.bloc]!==undefined?BLOC_POS[c.bloc]:2.5;}
+function ideoDist(nuanceA,eidA,nuanceB,eidB){if(nuanceA==='__ABS__'||nuanceB==='__ABS__')return 0.15;return Math.abs(blocPos(nuanceA,eidA)-blocPos(nuanceB,eidB))/5;}
+function solveLSRidge(A,b,lambda){const n=b.length;const M=A.map((row,i)=>[...row.map((v,j)=>i===j?v+lambda[i]:v),b[i]]);for(let c=0;c<n;c++){let mx=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[mx][c]))mx=r;[M[c],M[mx]]=[M[mx],M[c]];const piv=M[c][c];if(Math.abs(piv)<1e-12){for(let j=0;j<=n;j++)M[c][j]=j===c?1:0;continue;}for(let j=c;j<=n;j++)M[c][j]/=piv;for(let r=0;r<n;r++){if(r===c)continue;const f=M[r][c];for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];}}return M.map(r=>r[n]);}
+function computeOLS(eidA,eidB,dataA,dataB){const alpha=parseFloat(document.getElementById('ev-ideo')?.value||0);const elA=ELECTIONS.find(e=>e.id===eidA)||{},elB=ELECTIONS.find(e=>e.id===eidB)||{};const cA=elA.candidates||[],cB=elB.candidates||[];const mapA=new Map(dataA.map(r=>[r.bv,r])),mapB=new Map(dataB.map(r=>[r.bv,r]));const bvs=[...mapA.keys()].filter(k=>mapB.has(k));if(bvs.length<3)return null;const n=bvs.length;const totA={},totB={};cA.forEach(c=>{totA[c.nuance]=dataA.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});cB.forEach(c=>{totB[c.nuance]=dataB.reduce((s,r)=>s+(parseInt(r[c.nuance])||0),0);});const absA=dataA.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);const absB=dataB.reduce((s,r)=>s+Math.max(0,(r.ins||0)-(r.vot||0)),0);const K_HLM=2,K_PART=3;const weights=bvs.map(bv=>{const rA=mapA.get(bv),rB=mapB.get(bv);const pHLM=hlmReady?hlmPctForBV(bv):0;const partA=rA.ins>0?(rA.vot||0)/rA.ins*100:0;const partB=rB.ins>0?(rB.vot||0)/rB.ins*100:0;return 1+K_HLM*(pHLM/100)+K_PART*(Math.abs(partA-partB)/100);});const wSum=weights.reduce((s,w)=>s+w,0);const wNorm=weights.map(w=>w*n/wSum);const vA={},vB={};cA.forEach(c=>{vA[c.nuance]=bvs.map(bv=>parseInt(mapA.get(bv)[c.nuance])||0);});vA['__ABS__']=bvs.map(bv=>Math.max(0,(mapA.get(bv).ins||0)-(mapA.get(bv).vot||0)));cB.forEach(c=>{vB[c.nuance]=bvs.map(bv=>parseInt(mapB.get(bv)[c.nuance])||0);});vB['__ABS__']=bvs.map(bv=>Math.max(0,(mapB.get(bv).ins||0)-(mapB.get(bv).vot||0)));const srcA=[...cA.map(c=>c.nuance),'__ABS__'];const tgtB=[...cB.map(c=>c.nuance),'__ABS__'];const xScale=srcA.map(na=>{const x=vA[na];const mu=x.reduce((s,v,i)=>s+v*wNorm[i],0)/n;const va=x.reduce((s,v,i)=>s+wNorm[i]*(v-mu)*(v-mu),0)/n;return Math.max(va,1);});const flows={};tgtB.forEach(nb=>{const y=vB[nb];const X=srcA.map(na=>vA[na]);const p=srcA.length;const XtWX=Array.from({length:p},(_,i)=>Array.from({length:p},(_,j)=>{let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*X[j][k];return s;}));const XtWy=srcA.map((_,i)=>{let s=0;for(let k=0;k<n;k++)s+=wNorm[k]*X[i][k]*y[k];return s;});const lambda=srcA.map((na,i)=>{const d=ideoDist(na,eidA,nb,eidB);return 1e-4*xScale[i]+alpha*d*d*xScale[i];});const beta=solveLSRidge(XtWX,XtWy,lambda);flows[nb]={};srcA.forEach((na,i)=>{const tot=na==='__ABS__'?absA:(totA[na]||0);flows[nb][na]=Math.max(0,beta[i]*tot);});});return{flows,totA,totB,absA,absB,cA,cB,bvCount:bvs.length,elA,elB};}
+function populateEvolSelects(){const sa=document.getElementById('ev-a'),sb=document.getElementById('ev-b');const va=sa.value,vb=sb.value;const opts=ELECTIONS.map(e=>`<option value="${e.id}">${esc(e.label)} (${e.date||''})</option>`).join('');sa.innerHTML=opts;sb.innerHTML=opts;if(ELECTIONS.length>=2){sa.value=va||ELECTIONS[0].id;sb.value=vb||ELECTIONS[1].id;if(sa.value===sb.value&&ELECTIONS.length>1)sb.value=ELECTIONS[1].id;}}
+async function renderEvol(){const eidA=document.getElementById('ev-a').value;const eidB=document.getElementById('ev-b').value;const thresh=parseInt(document.getElementById('ev-thr').value)||0;const info=document.getElementById('evol-info');if(!eidA||!eidB||eidA===eidB){document.getElementById('sk-svg').innerHTML='';info.textContent='Sélectionnez deux élections différentes.';return;}info.textContent='Calcul OLS en cours…';const[dataA,dataB]=await Promise.all([loadCSVById(eidA),loadCSVById(eidB)]);if(!dataA.length||!dataB.length){info.textContent='Données manquantes.';return;}const res=computeOLS(eidA,eidB,dataA,dataB);if(!res){info.textContent='Bureaux communs insuffisants.';return;}info.textContent=`${res.bvCount} bureaux communs · OLS écologique · seuil ${fN(thresh)} voix`;drawSankey(res,thresh);renderEvolSide(res,thresh);}
+function drawSankey(res,thresh){const svg=document.getElementById('sk-svg');const wrap=document.getElementById('sk-wrap');const W=wrap.clientWidth||900,H=wrap.clientHeight||580;const{flows,totA,totB,absA,absB,cA,cB,elA,elB}=res;const NS='http://www.w3.org/2000/svg';const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];const tgtNodes=[...cB.map(c=>({...c,_tot:totB[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absB}];const PAD=44,NW=14,GAP=5,LBL_W=140;const X_SRC=LBL_W,X_TGT=W-LBL_W-NW;const areaH=H-PAD*2;function layout(nodes,cx){const total=nodes.reduce((s,n)=>s+n._tot,0)||1;const sc=(areaH-GAP*(nodes.length-1))/total;let y=PAD;nodes.forEach(n=>{n._h=Math.max(3,Math.round(n._tot*sc));n._y=y;n._cx=cx;y+=n._h+GAP;});}layout(srcNodes,X_SRC);layout(tgtNodes,X_TGT);const outY={};srcNodes.forEach(n=>outY[n.nuance]=n._y);const inY={};tgtNodes.forEach(n=>inY[n.nuance]=n._y);const links=[];srcNodes.forEach(sa=>{tgtNodes.forEach(tb=>{const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);if(v<thresh)return;const hA=sa._tot>0?sa._h*v/sa._tot:0;const hB=tb._tot>0?tb._h*v/tb._tot:0;links.push({sa,tb,v,hA,hB,y0:outY[sa.nuance],y1:inY[tb.nuance]});outY[sa.nuance]+=hA;inY[tb.nuance]+=hB;});});svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('width',W);svg.setAttribute('height',H);svg.innerHTML='';const defs=document.createElementNS(NS,'defs');links.forEach((lk,i)=>{const g=document.createElementNS(NS,'linearGradient');g.setAttribute('id',`g${i}`);g.setAttribute('x1','0%');g.setAttribute('x2','100%');g.setAttribute('y1','0%');g.setAttribute('y2','0%');const s1=document.createElementNS(NS,'stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',lk.sa.color);s1.setAttribute('stop-opacity','0.5');const s2=document.createElementNS(NS,'stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',lk.tb.color);s2.setAttribute('stop-opacity','0.4');g.appendChild(s1);g.appendChild(s2);defs.appendChild(g);});svg.appendChild(defs);links.forEach((lk,i)=>{const x0=lk.sa._cx+NW,x1=lk.tb._cx,cx=(x0+x1)/2;const y0t=lk.y0,y0b=lk.y0+lk.hA,y1t=lk.y1,y1b=lk.y1+lk.hB;const path=document.createElementNS(NS,'path');path.setAttribute('d',`M${x0} ${y0t} C${cx} ${y0t},${cx} ${y1t},${x1} ${y1t} L${x1} ${y1b} C${cx} ${y1b},${cx} ${y0b},${x0} ${y0b}Z`);path.setAttribute('fill',`url(#g${i})`);path.setAttribute('stroke','none');path.style.opacity='.85';path.style.cursor='pointer';path.style.transition='opacity .15s';const nomA=lk.sa.nuance==='__ABS__'?'Abstentions':lk.sa.nom;const nomB=lk.tb.nuance==='__ABS__'?'Abstentions':lk.tb.nom;const pctA=lk.sa._tot>0?lk.v/lk.sa._tot*100:0;const pctB=lk.tb._tot>0?lk.v/lk.tb._tot*100:0;const tipHtml=`<strong style="color:${lk.sa.color}">${esc(nomA)}</strong> <span style="color:var(--tm)">→</span> <strong style="color:${lk.tb.color}">${esc(nomB)}</strong><br><span style="color:var(--tm)">Flux estimé :</span> <strong>${fN(lk.v)} voix</strong><br><span style="font-size:10px;color:var(--tm)">${fP(pctA)} de la source · ${fP(pctB)} de la cible</span>`;path.addEventListener('mouseenter',e=>{path.style.opacity='1';showTip(e,tipHtml);});path.addEventListener('mousemove',moveTip);path.addEventListener('mouseleave',()=>{path.style.opacity='.85';hideTip();});svg.appendChild(path);});srcNodes.forEach(n=>{const rect=document.createElementNS(NS,'rect');rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');svg.appendChild(rect);const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;const short=nom.length>22?nom.substring(0,20)+'…':nom;const t=document.createElementNS(NS,'text');t.setAttribute('x',n._cx-10);t.setAttribute('y',n._y+n._h/2);t.setAttribute('text-anchor','end');t.setAttribute('dominant-baseline','central');t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=short;svg.appendChild(t);if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx-10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','end');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}});tgtNodes.forEach(n=>{const rect=document.createElementNS(NS,'rect');rect.setAttribute('x',n._cx);rect.setAttribute('y',n._y);rect.setAttribute('width',NW);rect.setAttribute('height',Math.max(2,n._h));rect.setAttribute('fill',n.color);rect.setAttribute('rx','3');svg.appendChild(rect);const nom=n.nuance==='__ABS__'?'Abstentions':n.nom;const short=nom.length>22?nom.substring(0,20)+'…':nom;const t=document.createElementNS(NS,'text');t.setAttribute('x',n._cx+NW+10);t.setAttribute('y',n._y+n._h/2);t.setAttribute('text-anchor','start');t.setAttribute('dominant-baseline','central');t.setAttribute('fill','#d4d0ca');t.setAttribute('font-size','11');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=short;svg.appendChild(t);if(n._h>18){const v=document.createElementNS(NS,'text');v.setAttribute('x',n._cx+NW+10);v.setAttribute('y',n._y+n._h/2+14);v.setAttribute('text-anchor','start');v.setAttribute('dominant-baseline','central');v.setAttribute('fill','#706b63');v.setAttribute('font-size','10');v.setAttribute('font-family','DM Sans,sans-serif');v.textContent=fN(n._tot);svg.appendChild(v);}});function colTitle(x,label){const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',PAD-16);t.setAttribute('text-anchor','middle');t.setAttribute('fill','#b8282e');t.setAttribute('font-size','11');t.setAttribute('font-weight','600');t.setAttribute('font-family','DM Sans,sans-serif');t.textContent=label;svg.appendChild(t);}colTitle(X_SRC+NW/2,(elA.label||'')+' · '+(elA.date||''));colTitle(X_TGT+NW/2,(elB.label||'')+' · '+(elB.date||''));}
+function renderEvolSide(res,thresh){const{flows,totA,absA,cA,cB}=res;const srcNodes=[...cA.map(c=>({...c,_tot:totA[c.nuance]||0})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:absA}];const tgtNodes=[...cB.map(c=>({...c,_tot:(res.totB[c.nuance]||0)})),{nuance:'__ABS__',nom:'Abstentions',color:'#555',_tot:res.absB}];let html='';srcNodes.filter(s=>s._tot>0).forEach(sa=>{const nom=sa.nuance==='__ABS__'?'Abstentions':sa.nom;html+=`<div class="fl-block"><div class="fl-hdr"><div class="fl-dot" style="background:${sa.color}"></div><span class="fl-nm" style="color:${sa.color}">${esc(nom)}</span><span class="fl-tot">${fN(sa._tot)}</span></div>`;tgtNodes.forEach(tb=>{const v=Math.round(flows[tb.nuance]?.[sa.nuance]||0);if(v<Math.max(1,thresh/2))return;const pct=sa._tot>0?v/sa._tot*100:0;const nomB=tb.nuance==='__ABS__'?'Abstentions':tb.nom;html+=`<div class="fl-row"><div class="fl-rd" style="background:${tb.color}"></div><span class="fl-rl" title="${esc(nomB)}">${esc(nomB)}</span><span class="fl-rv">${fN(v)}</span><span class="fl-rp">${fP(pct)}</span></div>`;});html+=`</div>`;});document.getElementById('ev-flows').innerHTML=html||'<div style="color:var(--tm);font-size:11px">Aucun flux au-dessus du seuil.</div>';}
 function toggleInfoPop(e){e.stopPropagation();const pop=document.getElementById('sk-info-pop');const wasVis=pop.classList.contains('vis');pop.classList.toggle('vis');if(!wasVis){const close=ev=>{if(!pop.contains(ev.target)&&ev.target.id!=='sk-info-btn'){pop.classList.remove('vis');document.removeEventListener('click',close);}};setTimeout(()=>document.addEventListener('click',close),10);}}
 function showTip(e,html){const t=document.getElementById('sk-tip');t.innerHTML=html;t.style.display='block';moveTip(e);}
 function moveTip(e){const t=document.getElementById('sk-tip'),w=document.getElementById('sk-wrap'),r=w.getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top-10;if(x+240>r.width)x=e.clientX-r.left-240;if(y+90>r.height)y=e.clientY-r.top-90;t.style.left=x+'px';t.style.top=y+'px';}
 function hideTip(){document.getElementById('sk-tip').style.display='none';}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EXPORT ENGINE
+══════════════════════════════════════════════════════════════════════════ */
+
+function openExportModal(){
+  // Auto-select target based on current mode
+  const autoTarget=mode==='evol'?'evol':'map';
+  selectExpTargetByKey(autoTarget);
+  updateExpFilename();
+  document.getElementById('exp-modal').classList.add('vis');
+}
+function closeExportModal(){document.getElementById('exp-modal').classList.remove('vis');}
+function closeExportModalBg(e){if(e.target===document.getElementById('exp-modal'))closeExportModal();}
+function selectExpTarget(btn){
+  document.querySelectorAll('.exp-target-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  _expTarget=btn.dataset.target;
+  updateExpFilename();
+}
+function selectExpTargetByKey(key){
+  document.querySelectorAll('.exp-target-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.target===key);
+  });
+  _expTarget=key;
+}
+function updateExpFilename(){
+  const el=EL(),date=(el.date||'').replace(/\//g,'-');
+  const modeLabel={winner:'liste-tete',participation:'participation',gd:'gd',frag:'fragmentation',hlm:'hlm',evol:'evolutions'}[mode]||mode;
+  const suffix=_expTarget==='map'?`carte_${modeLabel}`:_expTarget==='panel'?'resultats':'evolutions';
+  document.getElementById('exp-filename').value=`villejuif_${suffix}_${date||'2026'}`;
+}
+
+/* ── Build raw data table HTML ── */
+function buildDataTable(){
+  if(!CUR_DATA||!CUR_DATA.length)return'';
+  const cs=cands();
+  let h=`<table style="border-collapse:collapse;width:100%;font-size:9px;margin-top:12px;font-family:sans-serif">`;
+  h+=`<tr style="background:#222">`;
+  h+=`<th style="padding:4px 6px;text-align:left;color:#b8282e;border:1px solid #333">BV</th>`;
+  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Inscrits</th>`;
+  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Votants</th>`;
+  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Part.%</th>`;
+  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Exprimés</th>`;
+  cs.forEach(c=>h+=`<th style="padding:4px 6px;color:${c.color};border:1px solid #333">${c.nuance}</th>`);
+  h+=`</tr>`;
+  CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach((row,i)=>{
+    const bg=i%2===0?'#1a1b1f':'#141518';
+    const part=row.ins>0?(row.vot/row.ins*100).toFixed(1):'—';
+    h+=`<tr style="background:${bg}">`;
+    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;font-weight:700;color:#fff">${parseInt(row.bv).toString().padStart(2,'0')}</td>`;
+    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.ins)}</td>`;
+    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.vot)}</td>`;
+    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#64b5f6">${part}</td>`;
+    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.exp)}</td>`;
+    cs.forEach(c=>{
+      const v=parseInt(row[c.nuance])||0;
+      const pct=row.exp>0?(v/row.exp*100).toFixed(1):'—';
+      h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:${c.color}">${fN(v)} <span style="opacity:.5">(${pct}%)</span></td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`</table>`;
+  return h;
+}
+
+/* ── Composite canvas builder ── */
+async function buildExportCanvas(fmt){
+  const inclTitle=document.getElementById('exp-opt-title').checked;
+  const inclLegend=document.getElementById('exp-opt-legend').checked;
+  const inclSources=document.getElementById('exp-opt-sources').checked;
+  const inclTable=document.getElementById('exp-opt-table').checked;
+  const el=EL();
+
+  // ─ MAP target ─
+  if(_expTarget==='map'){
+    // 1. Get map WebGL canvas
+    await new Promise(r=>setTimeout(r,80)); // let map settle
+    const mapCanvas=map.getCanvas();
+    const mW=mapCanvas.width,mH=mapCanvas.height;
+
+    // 2. Determine legend element to capture
+    const legIds=['leg','pleg','cleg','hleg'];
+    let legEl=null;
+    for(const id of legIds){
+      const el2=document.getElementById(id);
+      if(el2&&el2.style.display!=='none'&&el2.offsetParent!==null){legEl=el2;break;}
+    }
+
+    // 3. Header height
+    const HDR=inclTitle?52:0;
+    const FTR=(inclSources||inclTable)?0:0; // handled below
+
+    // 4. Build offscreen canvas
+    const PAD=16;
+    const outW=mW+PAD*2;
+    let outH=HDR+mH+PAD*2+(inclSources?28:0);
+
+    const tableHtml=inclTable?buildDataTable():'';
+    // We'll render table separately via html2canvas if needed
+
+    const offC=document.createElement('canvas');
+    offC.width=outW;
+    offC.height=outH;
+    const ctx=offC.getContext('2d');
+
+    // Background
+    ctx.fillStyle='#141518';
+    ctx.fillRect(0,0,outW,outH);
+
+    // Header
+    if(inclTitle){
+      ctx.fillStyle='#ffffff';
+      ctx.font='bold 16px "DM Sans", sans-serif';
+      ctx.fillText('Villejuif — Observatoire électoral',PAD,28);
+      const modeLbls={winner:'Liste en tête',participation:'Participation',gd:'Ratio Gauche/Droite',frag:'Fragmentation',hlm:'Logements sociaux'};
+      const modeLabel=curCand?`Score — ${cname(curCand)}`:(modeLbls[mode]||mode);
+      ctx.fillStyle='#b8282e';
+      ctx.font='600 11px "DM Sans", sans-serif';
+      ctx.fillText(`${modeLabel}  ·  ${el.label||''}  ·  ${el.date||''}`,PAD,46);
+    }
+
+    // Map image
+    ctx.drawImage(mapCanvas,PAD,HDR+PAD,mW,mH);
+
+    // Subtle border around map
+    ctx.strokeStyle='rgba(255,255,255,0.08)';
+    ctx.lineWidth=1;
+    ctx.strokeRect(PAD,HDR+PAD,mW,mH);
+
+    // Legend overlay (capture DOM element)
+    if(inclLegend&&legEl){
+      try{
+        const legCanvas=await html2canvas(legEl,{
+          backgroundColor:'rgba(22,23,27,0.96)',
+          scale:window.devicePixelRatio||1,
+          logging:false,
+          useCORS:true
+        });
+        const LX=PAD+16;
+        const LY=HDR+PAD+mH-legCanvas.height/window.devicePixelRatio-16;
+        ctx.globalAlpha=0.96;
+        ctx.drawImage(legCanvas,LX,LY,legCanvas.width/window.devicePixelRatio,legCanvas.height/window.devicePixelRatio);
+        ctx.globalAlpha=1;
+      }catch(e){console.warn('Legend capture failed',e);}
+    }
+
+    // Sources footer
+    if(inclSources){
+      ctx.fillStyle='rgba(255,255,255,0.2)';
+      ctx.font='10px "DM Sans", sans-serif';
+      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif · RPLS (SDES)',PAD,outH-10);
+    }
+
+    // Table (render into separate canvas below map)
+    if(inclTable){
+      const tDiv=document.createElement('div');
+      tDiv.style.cssText=`position:fixed;left:-9999px;top:0;width:${mW+PAD*2}px;background:#141518;padding:12px;font-family:sans-serif`;
+      tDiv.innerHTML=buildDataTable();
+      document.body.appendChild(tDiv);
+      try{
+        const tCv=await html2canvas(tDiv,{backgroundColor:'#141518',scale:1,logging:false});
+        const newH=outH+tCv.height+PAD;
+        const fullC=document.createElement('canvas');
+        fullC.width=outW;
+        fullC.height=newH;
+        const ctx2=fullC.getContext('2d');
+        ctx2.fillStyle='#141518';
+        ctx2.fillRect(0,0,outW,newH);
+        ctx2.drawImage(offC,0,0);
+        ctx2.fillStyle='#b8282e';
+        ctx2.font='600 11px sans-serif';
+        ctx2.fillText('Données brutes par bureau de vote',PAD,outH+18);
+        ctx2.drawImage(tCv,PAD,outH+28);
+        document.body.removeChild(tDiv);
+        return fullC;
+      }catch(e){document.body.removeChild(tDiv);}
+    }
+    return offC;
+  }
+
+  // ─ PANEL target ─
+  if(_expTarget==='panel'){
+    const panelEl=document.getElementById('panel');
+    const panelC=await html2canvas(panelEl,{
+      backgroundColor:'#1a1b1f',
+      scale:window.devicePixelRatio||1,
+      logging:false,
+      width:360,
+      height:panelEl.scrollHeight
+    });
+    const PW=panelC.width/(window.devicePixelRatio||1);
+    const PH=panelC.height/(window.devicePixelRatio||1);
+    const HDR=inclTitle?52:0;
+    const outW=PW+32;
+    const outH=HDR+PH+32+(inclSources?28:0);
+    const offC=document.createElement('canvas');
+    offC.width=outW;offC.height=outH;
+    const ctx=offC.getContext('2d');
+    ctx.fillStyle='#141518';ctx.fillRect(0,0,outW,outH);
+    if(inclTitle){
+      ctx.fillStyle='#ffffff';ctx.font='bold 16px "DM Sans", sans-serif';
+      ctx.fillText('Villejuif — Résultats',16,28);
+      ctx.fillStyle='#b8282e';ctx.font='600 11px "DM Sans", sans-serif';
+      ctx.fillText(`${el.label||''}  ·  ${el.date||''}`,16,46);
+    }
+    ctx.drawImage(panelC,16,HDR+16,PW,PH);
+    if(inclSources){
+      ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='10px "DM Sans", sans-serif';
+      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif',16,outH-10);
+    }
+    return offC;
+  }
+
+  // ─ EVOL target ─
+  if(_expTarget==='evol'){
+    const evolEl=document.getElementById('evol-ov');
+    const evolC=await html2canvas(evolEl,{
+      backgroundColor:'#141518',
+      scale:window.devicePixelRatio||1,
+      logging:false,
+      ignoreElements:el2=>el2.id==='sk-info-pop'||el2.id==='sk-tip'
+    });
+    const EW=evolC.width/(window.devicePixelRatio||1);
+    const EH=evolC.height/(window.devicePixelRatio||1);
+    const HDR=inclTitle?52:0;
+    const outW=EW;
+    const outH=HDR+EH+(inclSources?28:0);
+    const offC=document.createElement('canvas');
+    offC.width=outW;offC.height=outH;
+    const ctx=offC.getContext('2d');
+    ctx.fillStyle='#141518';ctx.fillRect(0,0,outW,outH);
+    if(inclTitle){
+      ctx.fillStyle='#ffffff';ctx.font='bold 16px "DM Sans", sans-serif';
+      ctx.fillText('Villejuif — Flux de vote (Évolutions)',16,28);
+      ctx.fillStyle='#b8282e';ctx.font='600 11px "DM Sans", sans-serif';
+      const eidA=document.getElementById('ev-a')?.value||'';
+      const eidB=document.getElementById('ev-b')?.value||'';
+      const elA=ELECTIONS.find(e=>e.id===eidA);
+      const elB=ELECTIONS.find(e=>e.id===eidB);
+      ctx.fillText(`${elA?.label||eidA}  →  ${elB?.label||eidB}`,16,46);
+    }
+    ctx.drawImage(evolC,0,HDR,EW,EH);
+    if(inclSources){
+      ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='10px "DM Sans", sans-serif';
+      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif · Méthode : OLS écologique',16,outH-10);
+    }
+    return offC;
+  }
+  return null;
+}
+
+async function runExport(fmt){
+  const btns=document.querySelectorAll('.exp-fmt-btn');
+  const prog=document.getElementById('exp-progress');
+  btns.forEach(b=>{b.disabled=true;});
+  prog.style.display='block';
+  prog.textContent='Génération en cours…';
+  try{
+    const canvas=await buildExportCanvas(fmt);
+    if(!canvas){prog.textContent='Erreur : cible introuvable.';return;}
+    const filename=(document.getElementById('exp-filename').value||'villejuif_export')+'.'+fmt;
+    if(fmt==='png'){
+      prog.textContent='Téléchargement PNG…';
+      canvas.toBlob(blob=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=filename;
+        a.click();
+        setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+        prog.textContent='✓ PNG exporté';
+        setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},2000);
+      },'image/png');
+    }else{
+      prog.textContent='Génération PDF…';
+      const{jsPDF}=window.jspdf;
+      const W=canvas.width,H=canvas.height;
+      const orientation=W>H?'l':'p';
+      const pdf=new jsPDF({orientation,unit:'px',format:[W,H],hotfixes:['px_scaling']});
+      pdf.addImage(canvas.toDataURL('image/png',0.95),0,0,W,H,'','FAST');
+      pdf.save(filename);
+      prog.textContent='✓ PDF exporté';
+      setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},2000);
+    }
+  }catch(err){
+    console.error('Export error',err);
+    prog.textContent='⚠ Erreur lors de l\'export.';
+    setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},3000);
+  }
+}
 
 /* ── map init ── */
 async function init(){
@@ -773,7 +919,7 @@ async function init(){
 }
 
 /* ── Hémicycle MUN26T2 ── */
-function renderHemicycle(container){container.innerHTML=`<div class="cpst" style="margin-bottom:10px">Composition du conseil municipal</div><style>.ws-group rect{transition:opacity .15s;cursor:default;}.ws-group:hover rect{opacity:.75;}</style><svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;display:block;margin:0 auto"><g><g class="ws-group" fill="#C2185B"><title>Maire - PCF</title><rect x="6.75" y="164.25" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#B71C1C"><title>LFI \u2014 10 sièges</title><rect x="41.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#C2185B"><title>PCF \u2014 10 sièges</title><rect x="111.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#AD1457"><title>CIT \u2014 4 sièges</title><rect x="216.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#4CAF50"><title>ECO \u2014 4 sièges</title><rect x="251.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#62C167"><title>GEN \u2014 2 sièges</title><rect x="286.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#EC407A"><title>PS \u2014 6 sièges</title><rect x="286.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#FF8F00"><title>NPCV \u2014 7 sièges</title><rect x="41.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#1565C0"><title>EPV \u2014 6 sièges</title><rect x="76.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><line x1="6" y1="196" x2="354" y2="196" stroke="rgba(255,255,255,.14)" stroke-width="1.5" stroke-dasharray="4,4"/><text x="354" y="192" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">majorité ↑</text><text x="354" y="208" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">opposition ↓</text><text x="295" y="270" text-anchor="middle" font-size="42" font-weight="700" fill="#d4d0ca" font-family="Georgia,serif">49</text><text x="295" y="290" text-anchor="middle" font-size="10" fill="#706b63" font-family="sans-serif">CONSEILLERS</text></g></svg><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#C2185B"></div><span style="color:var(--ts)">Liste Garzon</span><strong style="color:#C2185B;font-family:Georgia,serif;font-size:13px">36</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#FF8F00"></div><span style="color:var(--ts)">Liste Esclagnon</span><strong style="color:#FF8F00;font-family:Georgia,serif;font-size:13px">7</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#1565C0"></div><span style="color:var(--ts)">Liste Conquet</span><strong style="color:#1565C0;font-family:Georgia,serif;font-size:13px">6</strong></div></div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;justify-content:center"><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#B71C1C;display:inline-block"></span><span style="color:var(--ts)">LFI</span><strong style="color:#B71C1C">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#C2185B;display:inline-block"></span><span style="color:var(--ts)">PCF</span><strong style="color:#C2185B">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#EC407A;display:inline-block"></span><span style="color:var(--ts)">PS</span><strong style="color:#EC407A">6</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#AD1457;display:inline-block"></span><span style="color:var(--ts)">CIT</span><strong style="color:#AD1457">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height=6px;border-radius:2px;background:#4CAF50;display:inline-block"></span><span style="color:var(--ts)">ECO</span><strong style="color:#4CAF50">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#62C167;display:inline-block"></span><span style="color:var(--ts)">GEN</span><strong style="color:#62C167">2</strong></span></div><div style="font-size:9px;color:var(--tm);text-align:center;margin-top:8px">22/03/2026 · 49 conseillers · majorité absolue : 25</div>`;}
+function renderHemicycle(container){container.innerHTML=`<div class="cpst" style="margin-bottom:10px">Composition du conseil municipal</div><style>.ws-group rect{transition:opacity .15s;cursor:default;}.ws-group:hover rect{opacity:.75;}</style><svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;display:block;margin:0 auto"><g><g class="ws-group" fill="#C2185B"><title>Maire - PCF</title><rect x="6.75" y="164.25" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#B71C1C"><title>LFI — 10 sièges</title><rect x="41.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#C2185B"><title>PCF — 10 sièges</title><rect x="111.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="181.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#AD1457"><title>CIT — 4 sièges</title><rect x="216.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="216.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#4CAF50"><title>ECO — 4 sièges</title><rect x="251.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="251.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#62C167"><title>GEN — 2 sièges</title><rect x="286.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#EC407A"><title>PS — 6 sièges</title><rect x="286.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="286.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="111.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="76.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="41.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="321.75" y="6.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#FF8F00"><title>NPCV — 7 sièges</title><rect x="41.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="41.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="76.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><g class="ws-group" fill="#1565C0"><title>EPV — 6 sièges</title><rect x="76.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="251.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="286.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="111.75" y="321.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/><rect x="146.75" y="216.75" rx="15.75" ry="15.75" width="31.5" height="31.5"/></g><line x1="6" y1="196" x2="354" y2="196" stroke="rgba(255,255,255,.14)" stroke-width="1.5" stroke-dasharray="4,4"/><text x="354" y="192" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">majorité ↑</text><text x="354" y="208" text-anchor="end" font-size="9" fill="#706b63" font-family="sans-serif">opposition ↓</text><text x="295" y="270" text-anchor="middle" font-size="42" font-weight="700" fill="#d4d0ca" font-family="Georgia,serif">49</text><text x="295" y="290" text-anchor="middle" font-size="10" fill="#706b63" font-family="sans-serif">CONSEILLERS</text></g></svg><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#C2185B"></div><span style="color:var(--ts)">Liste Garzon</span><strong style="color:#C2185B;font-family:Georgia,serif;font-size:13px">36</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#FF8F00"></div><span style="color:var(--ts)">Liste Esclagnon</span><strong style="color:#FF8F00;font-family:Georgia,serif;font-size:13px">7</strong></div><div style="display:flex;align-items:center;gap:4px;font-size:10px"><div style="width:8px;height:8px;border-radius:2px;background:#1565C0"></div><span style="color:var(--ts)">Liste Conquet</span><strong style="color:#1565C0;font-family:Georgia,serif;font-size:13px">6</strong></div></div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:8px;justify-content:center"><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#B71C1C;display:inline-block"></span><span style="color:var(--ts)">LFI</span><strong style="color:#B71C1C">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#C2185B;display:inline-block"></span><span style="color:var(--ts)">PCF</span><strong style="color:#C2185B">10</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#EC407A;display:inline-block"></span><span style="color:var(--ts)">PS</span><strong style="color:#EC407A">6</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#AD1457;display:inline-block"></span><span style="color:var(--ts)">CIT</span><strong style="color:#AD1457">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height=6px;border-radius:2px;background:#4CAF50;display:inline-block"></span><span style="color:var(--ts)">ECO</span><strong style="color:#4CAF50">4</strong></span><span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;background:var(--bd);border-radius:3px;padding:2px 5px"><span style="width:6px;height:6px;border-radius:2px;background:#62C167;display:inline-block"></span><span style="color:var(--ts)">GEN</span><strong style="color:#62C167">2</strong></span></div><div style="font-size:9px;color:var(--tm);text-align:center;margin-top:8px">22/03/2026 · 49 conseillers · majorité absolue : 25</div>`;}
 
 init();
 </script>
