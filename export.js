@@ -3,6 +3,7 @@
  * Rendu Canvas 2D natif sur fond blanc, format A4.
  * Référence window._exportGetState() exposé par index.html.
  */
+(function() { // IIFE — isole les variables du scope global
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const A4_MM   = { w: 297, h: 210 };          // landscape mm
@@ -757,3 +758,4 @@ if(document.readyState==='loading'){
 }else{
   XP.init();
 }
+})(); // end IIFE
