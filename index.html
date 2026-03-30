@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Observatoire électoral — Villejuif</title>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -40,39 +38,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 .mbtn:hover{color:rgba(255,255,255,.8)}
 .mbtn.active{color:#fff;border-bottom-color:var(--ac);font-weight:600}
 
-/* ── Export button ── */
-#export-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 10px;cursor:pointer;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);font-family:var(--fb);white-space:nowrap;transition:all .2s;flex-shrink:0;margin-left:auto}
-#export-btn:hover{background:var(--acl);border-color:var(--ac);color:#fff}
-#export-btn svg{flex-shrink:0;opacity:.7}
-#export-btn:hover svg{opacity:1}
-
-/* ── Export modal ── */
-#exp-modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);align-items:center;justify-content:center}
-#exp-modal.vis{display:flex}
-#exp-box{background:#1a1b1f;border:1px solid rgba(255,255,255,.14);border-radius:12px;width:400px;max-width:94vw;box-shadow:0 16px 64px rgba(0,0,0,.6);overflow:hidden}
-#exp-hdr{padding:16px 20px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
-#exp-hdr h3{font-size:14px;font-weight:700;color:#fff}
-#exp-close{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;transition:color .15s}
-#exp-close:hover{color:#fff}
-#exp-body{padding:16px 20px}
-.exp-section{margin-bottom:16px}
-.exp-section-title{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--ac);margin-bottom:10px}
-.exp-check{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:12px;color:rgba(255,255,255,.75);transition:color .15s;user-select:none}
-.exp-check:hover{color:#fff}
-.exp-check input[type=checkbox]{width:14px;height:14px;cursor:pointer;flex-shrink:0;accent-color:var(--ac)}
-.exp-target-row{display:flex;gap:6px;flex-wrap:wrap}
-.exp-target-btn{background:rgba(255,255,255,.05);border:1px solid var(--bd2);border-radius:var(--rs);padding:5px 11px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:var(--fb);transition:all .2s}
-.exp-target-btn:hover{background:rgba(255,255,255,.09);color:rgba(255,255,255,.8)}
-.exp-target-btn.active{background:var(--acl);border-color:var(--ac);color:#fff}
-#exp-filename{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 10px;font-size:11px;font-family:var(--fb);color:rgba(255,255,255,.6);margin-top:10px}
-#exp-filename:focus{outline:none;border-color:var(--ac)}
-#exp-footer{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center}
-.exp-fmt-btn{flex:1;padding:9px;border-radius:var(--rs);border:1px solid var(--bd2);background:rgba(255,255,255,.05);font-size:12px;font-weight:700;font-family:var(--fb);cursor:pointer;transition:all .2s;letter-spacing:.5px}
-.exp-fmt-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.25);color:#fff}
-.exp-fmt-btn.png{color:#64b5f6}
-.exp-fmt-btn.pdf{color:#ef9a9a}
-.exp-fmt-btn:disabled{opacity:.35;cursor:not-allowed}
-#exp-progress{font-size:10px;color:var(--tm);flex:1;text-align:center;display:none}
 
 #map{position:fixed;top:var(--nav);left:0;right:var(--panel);bottom:28px;z-index:0}
 #panel{position:fixed;top:var(--nav);right:0;bottom:0;width:var(--panel);background:var(--sf);border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:20}
@@ -263,7 +228,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
     <button class="mbtn"        data-mode="hlm"           onclick="setMode('hlm')">Log. sociaux</button>
     <button class="mbtn"        data-mode="evol"          onclick="setMode('evol')">Évolutions</button>
   </div>
-  <button id="export-btn" onclick="openExportModal()">
+  <button id="export-btn" onclick="XP.open()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
     </svg>
@@ -271,104 +236,6 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
   </button>
 </nav>
 
-<!-- Export modal -->
-<div id="exp-modal" onclick="closeExportModalBg(event)">
-  <div id="exp-box">
-    <div id="exp-hdr">
-      <h3>Exporter la visualisation</h3>
-      <button id="exp-close" onclick="closeExportModal()">✕</button>
-    </div>
-    <div id="exp-body">
-      <div class="exp-section">
-        <div class="exp-section-title">Visualisation à exporter</div>
-        <div class="exp-target-row" id="exp-targets">
-          <button class="exp-target-btn active" data-target="map" onclick="selectExpTarget(this)">🗺 Carte</button>
-          <button class="exp-target-btn" data-target="panel" onclick="selectExpTarget(this)">📊 Résultats</button>
-          <button class="exp-target-btn" data-target="evol" onclick="selectExpTarget(this)">🔀 Évolutions</button>
-        </div>
-      </div>
-      <div class="exp-section">
-        <div class="exp-section-title">Éléments à inclure</div>
-        <label class="exp-check"><input type="checkbox" id="exp-opt-title" checked> Titre & élection</label>
-        <label class="exp-check"><input type="checkbox" id="exp-opt-legend" checked> Légende</label>
-        <label class="exp-check"><input type="checkbox" id="exp-opt-sources" checked> Sources</label>
-        <label class="exp-check"><input type="checkbox" id="exp-opt-table"> Tableau données brutes</label>
-      </div>
-      <div class="exp-section">
-        <div class="exp-section-title">Nom du fichier</div>
-        <input id="exp-filename" type="text" placeholder="villejuif_carte_2026" spellcheck="false">
-      </div>
-    </div>
-    <div id="exp-footer">
-      <span id="exp-progress">Génération en cours…</span>
-      <button class="exp-fmt-btn png" onclick="runExport('png')">⬇ PNG</button>
-      <button class="exp-fmt-btn pdf" onclick="runExport('pdf')">⬇ PDF</button>
-    </div>
-  </div>
-</div>
-
-<div id="map"></div>
-<div id="leg"></div>
-<div id="pleg"><h4 id="pl-t">Participation</h4><div class="gb" id="pl-g"></div><div class="gl" id="pl-l"></div></div>
-<div id="cleg"><h4 id="cl-t">Score</h4><div class="gb" id="cl-g"></div><div class="gl" id="cl-l"></div></div>
-<div id="hleg">
-  <h4>Logements sociaux <span id="hlm-status"></span></h4>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-    <svg width="60" height="18" viewBox="0 0 60 18">
-      <circle cx="5" cy="9" r="3" fill="#f48fb1" opacity=".85"/>
-      <circle cx="20" cy="9" r="5" fill="#f48fb1" opacity=".85"/>
-      <circle cx="40" cy="9" r="7" fill="#f48fb1" opacity=".85"/>
-      <circle cx="57" cy="9" r="9" fill="#f48fb1" opacity=".85"/>
-    </svg>
-    <span style="font-size:9px;color:var(--tm)">taille ∝ nb logements</span>
-  </div>
-  <div id="hleg-stats" style="font-size:10px;color:var(--ts);line-height:1.6"></div>
-</div>
-<div id="panel">
-  <div id="tabs">
-    <div class="tab active" onclick="sTab('r')">Résultats</div>
-    <div class="tab"        onclick="sTab('b')">Bureaux</div>
-    <div class="tab"        onclick="sTab('s')">Simulateur</div>
-    <div class="tab"        onclick="sTab('c')">Corrélations</div>
-  </div>
-  <div id="tc">
-    <div class="pane active" id="pane-r">
-      <div class="ph2" id="p-title">Résultats globaux</div>
-      <div class="kg" id="g-k"></div>
-      <div id="g-b"></div>
-      <div id="g-r"></div>
-      <div id="g-hemicycle" style="display:none;padding:14px 0 4px"></div>
-    </div>
-    <div class="pane" id="pane-b">
-      <div class="ph2">34 bureaux de vote</div>
-      <div id="bvg" style="display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
-    </div>
-    <div class="pane" id="pane-s">
-      <div class="ph2">Simulateur</div>
-      <p class="sh">Décochez une liste pour simuler sa non-présence.</p>
-      <div id="fc"></div>
-      <button id="rbtn" onclick="resetF()">↺ Tout réafficher</button>
-      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">
-        <div class="ph2" style="margin-bottom:8px">Résultats simulés</div>
-        <div class="kg" id="s-k"></div>
-        <div id="s-b"></div>
-        <div id="s-r"></div>
-      </div>
-    </div>
-    <div class="pane" id="pane-c">
-      <div class="ph2">Corrélations de vote</div>
-      <div id="cc"></div>
-    </div>
-    <div id="cp">
-      <div class="cph">
-        <button class="cpbk" onclick="closeCP()">← Retour aux résultats</button>
-        <div class="cpnm" id="cp-n"></div>
-        <div class="cpm" id="cp-m"></div>
-      </div>
-      <div class="cpb" id="cp-b"></div>
-    </div>
-  </div>
-</div>
 <!-- Évolutions overlay -->
 <div id="evol-ov">
   <div id="evol-hdr">
@@ -424,6 +291,8 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:var(--fb);backgroun
 </div>
 <div id="ft"></div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="export.js"></script>
 <script>
 const DATA_BASE='./data/',RPLS_LOCAL='./data/rpls_villejuif.csv',COM_INSEE='94076';
 let GEO=null,ELECTIONS=[],CUR_EID=null,CUR_DATA=null;
@@ -616,294 +485,58 @@ function moveTip(e){const t=document.getElementById('sk-tip'),w=document.getElem
 function hideTip(){document.getElementById('sk-tip').style.display='none';}
 
 /* ══════════════════════════════════════════════════════════════════════════
-   EXPORT ENGINE
+   EXPORT — état exposé à export.js
 ══════════════════════════════════════════════════════════════════════════ */
 
-function openExportModal(){
-  // Auto-select target based on current mode
-  const autoTarget=mode==='evol'?'evol':'map';
-  selectExpTargetByKey(autoTarget);
-  updateExpFilename();
-  document.getElementById('exp-modal').classList.add('vis');
-}
-function closeExportModal(){document.getElementById('exp-modal').classList.remove('vis');}
-function closeExportModalBg(e){if(e.target===document.getElementById('exp-modal'))closeExportModal();}
-function selectExpTarget(btn){
-  document.querySelectorAll('.exp-target-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  _expTarget=btn.dataset.target;
-  updateExpFilename();
-}
-function selectExpTargetByKey(key){
-  document.querySelectorAll('.exp-target-btn').forEach(b=>{
-    b.classList.toggle('active',b.dataset.target===key);
-  });
-  _expTarget=key;
-}
-function updateExpFilename(){
-  const el=EL(),date=(el.date||'').replace(/\//g,'-');
-  const modeLabel={winner:'liste-tete',participation:'participation',gd:'gd',frag:'fragmentation',hlm:'hlm',evol:'evolutions'}[mode]||mode;
-  const suffix=_expTarget==='map'?`carte_${modeLabel}`:_expTarget==='panel'?'resultats':'evolutions';
-  document.getElementById('exp-filename').value=`villejuif_${suffix}_${date||'2026'}`;
-}
-
-/* ── Build raw data table HTML ── */
-function buildDataTable(){
-  if(!CUR_DATA||!CUR_DATA.length)return'';
-  const cs=cands();
-  let h=`<table style="border-collapse:collapse;width:100%;font-size:9px;margin-top:12px;font-family:sans-serif">`;
-  h+=`<tr style="background:#222">`;
-  h+=`<th style="padding:4px 6px;text-align:left;color:#b8282e;border:1px solid #333">BV</th>`;
-  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Inscrits</th>`;
-  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Votants</th>`;
-  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Part.%</th>`;
-  h+=`<th style="padding:4px 6px;color:#b8282e;border:1px solid #333">Exprimés</th>`;
-  cs.forEach(c=>h+=`<th style="padding:4px 6px;color:${c.color};border:1px solid #333">${c.nuance}</th>`);
-  h+=`</tr>`;
-  CUR_DATA.slice().sort((a,b)=>parseInt(a.bv)-parseInt(b.bv)).forEach((row,i)=>{
-    const bg=i%2===0?'#1a1b1f':'#141518';
-    const part=row.ins>0?(row.vot/row.ins*100).toFixed(1):'—';
-    h+=`<tr style="background:${bg}">`;
-    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;font-weight:700;color:#fff">${parseInt(row.bv).toString().padStart(2,'0')}</td>`;
-    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.ins)}</td>`;
-    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.vot)}</td>`;
-    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#64b5f6">${part}</td>`;
-    h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:#d4d0ca">${fN(row.exp)}</td>`;
-    cs.forEach(c=>{
-      const v=parseInt(row[c.nuance])||0;
-      const pct=row.exp>0?(v/row.exp*100).toFixed(1):'—';
-      h+=`<td style="padding:3px 6px;border:1px solid #2a2a2a;text-align:right;color:${c.color}">${fN(v)} <span style="opacity:.5">(${pct}%)</span></td>`;
-    });
-    h+=`</tr>`;
-  });
-  h+=`</table>`;
-  return h;
-}
-
-/* ── Composite canvas builder ── */
-async function buildExportCanvas(fmt){
-  const inclTitle=document.getElementById('exp-opt-title').checked;
-  const inclLegend=document.getElementById('exp-opt-legend').checked;
-  const inclSources=document.getElementById('exp-opt-sources').checked;
-  const inclTable=document.getElementById('exp-opt-table').checked;
-  const el=EL();
-
-  // ─ MAP target ─
-  if(_expTarget==='map'){
-    // 1. Get map WebGL canvas
-    await new Promise(r=>setTimeout(r,80)); // let map settle
-    const mapCanvas=map.getCanvas();
-    const mW=mapCanvas.width,mH=mapCanvas.height;
-
-    // 2. Determine legend element to capture
-    const legIds=['leg','pleg','cleg','hleg'];
-    let legEl=null;
-    for(const id of legIds){
-      const el2=document.getElementById(id);
-      if(el2&&el2.style.display!=='none'&&el2.offsetParent!==null){legEl=el2;break;}
-    }
-
-    // 3. Header height
-    const HDR=inclTitle?52:0;
-    const FTR=(inclSources||inclTable)?0:0; // handled below
-
-    // 4. Build offscreen canvas
-    const PAD=16;
-    const outW=mW+PAD*2;
-    let outH=HDR+mH+PAD*2+(inclSources?28:0);
-
-    const tableHtml=inclTable?buildDataTable():'';
-    // We'll render table separately via html2canvas if needed
-
-    const offC=document.createElement('canvas');
-    offC.width=outW;
-    offC.height=outH;
-    const ctx=offC.getContext('2d');
-
-    // Background
-    ctx.fillStyle='#141518';
-    ctx.fillRect(0,0,outW,outH);
-
-    // Header
-    if(inclTitle){
-      ctx.fillStyle='#ffffff';
-      ctx.font='bold 16px "DM Sans", sans-serif';
-      ctx.fillText('Villejuif — Observatoire électoral',PAD,28);
-      const modeLbls={winner:'Liste en tête',participation:'Participation',gd:'Ratio Gauche/Droite',frag:'Fragmentation',hlm:'Logements sociaux'};
-      const modeLabel=curCand?`Score — ${cname(curCand)}`:(modeLbls[mode]||mode);
-      ctx.fillStyle='#b8282e';
-      ctx.font='600 11px "DM Sans", sans-serif';
-      ctx.fillText(`${modeLabel}  ·  ${el.label||''}  ·  ${el.date||''}`,PAD,46);
-    }
-
-    // Map image
-    ctx.drawImage(mapCanvas,PAD,HDR+PAD,mW,mH);
-
-    // Subtle border around map
-    ctx.strokeStyle='rgba(255,255,255,0.08)';
-    ctx.lineWidth=1;
-    ctx.strokeRect(PAD,HDR+PAD,mW,mH);
-
-    // Legend overlay (capture DOM element)
-    if(inclLegend&&legEl){
-      try{
-        const legCanvas=await html2canvas(legEl,{
-          backgroundColor:'rgba(22,23,27,0.96)',
-          scale:window.devicePixelRatio||1,
-          logging:false,
-          useCORS:true
-        });
-        const LX=PAD+16;
-        const LY=HDR+PAD+mH-legCanvas.height/window.devicePixelRatio-16;
-        ctx.globalAlpha=0.96;
-        ctx.drawImage(legCanvas,LX,LY,legCanvas.width/window.devicePixelRatio,legCanvas.height/window.devicePixelRatio);
-        ctx.globalAlpha=1;
-      }catch(e){console.warn('Legend capture failed',e);}
-    }
-
-    // Sources footer
-    if(inclSources){
-      ctx.fillStyle='rgba(255,255,255,0.2)';
-      ctx.font='10px "DM Sans", sans-serif';
-      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif · RPLS (SDES)',PAD,outH-10);
-    }
-
-    // Table (render into separate canvas below map)
-    if(inclTable){
-      const tDiv=document.createElement('div');
-      tDiv.style.cssText=`position:fixed;left:-9999px;top:0;width:${mW+PAD*2}px;background:#141518;padding:12px;font-family:sans-serif`;
-      tDiv.innerHTML=buildDataTable();
-      document.body.appendChild(tDiv);
-      try{
-        const tCv=await html2canvas(tDiv,{backgroundColor:'#141518',scale:1,logging:false});
-        const newH=outH+tCv.height+PAD;
-        const fullC=document.createElement('canvas');
-        fullC.width=outW;
-        fullC.height=newH;
-        const ctx2=fullC.getContext('2d');
-        ctx2.fillStyle='#141518';
-        ctx2.fillRect(0,0,outW,newH);
-        ctx2.drawImage(offC,0,0);
-        ctx2.fillStyle='#b8282e';
-        ctx2.font='600 11px sans-serif';
-        ctx2.fillText('Données brutes par bureau de vote',PAD,outH+18);
-        ctx2.drawImage(tCv,PAD,outH+28);
-        document.body.removeChild(tDiv);
-        return fullC;
-      }catch(e){document.body.removeChild(tDiv);}
-    }
-    return offC;
+window._exportGetState = function() {
+  const modeLbls = {
+    winner:'Liste en tête', participation:'Participation',
+    gd:'Ratio G/D', frag:'Fragmentation', hlm:'Log. sociaux', evol:'Évolutions'
+  };
+  const modeSlugs = {
+    winner:'liste-tete', participation:'participation',
+    gd:'gd', frag:'fragmentation', hlm:'hlm', evol:'evolutions'
+  };
+  const el = EL();
+  // Determine current view
+  let view = 'map';
+  if (mode === 'evol') view = 'evol';
+  else {
+    // If panel tab "Résultats" is active and no BV detail open, view = panel
+    const paneR = document.getElementById('pane-r');
+    const panelVisible = document.getElementById('panel').style.display !== 'none';
+    if (panelVisible && paneR && paneR.classList.contains('active')) view = 'panel';
+    else if (panelVisible) view = 'panel';
+    else view = 'map';
   }
 
-  // ─ PANEL target ─
-  if(_expTarget==='panel'){
-    const panelEl=document.getElementById('panel');
-    const panelC=await html2canvas(panelEl,{
-      backgroundColor:'#1a1b1f',
-      scale:window.devicePixelRatio||1,
-      logging:false,
-      width:360,
-      height:panelEl.scrollHeight
-    });
-    const PW=panelC.width/(window.devicePixelRatio||1);
-    const PH=panelC.height/(window.devicePixelRatio||1);
-    const HDR=inclTitle?52:0;
-    const outW=PW+32;
-    const outH=HDR+PH+32+(inclSources?28:0);
-    const offC=document.createElement('canvas');
-    offC.width=outW;offC.height=outH;
-    const ctx=offC.getContext('2d');
-    ctx.fillStyle='#141518';ctx.fillRect(0,0,outW,outH);
-    if(inclTitle){
-      ctx.fillStyle='#ffffff';ctx.font='bold 16px "DM Sans", sans-serif';
-      ctx.fillText('Villejuif — Résultats',16,28);
-      ctx.fillStyle='#b8282e';ctx.font='600 11px "DM Sans", sans-serif';
-      ctx.fillText(`${el.label||''}  ·  ${el.date||''}`,16,46);
-    }
-    ctx.drawImage(panelC,16,HDR+16,PW,PH);
-    if(inclSources){
-      ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='10px "DM Sans", sans-serif';
-      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif',16,outH-10);
-    }
-    return offC;
-  }
-
-  // ─ EVOL target ─
-  if(_expTarget==='evol'){
-    const evolEl=document.getElementById('evol-ov');
-    const evolC=await html2canvas(evolEl,{
-      backgroundColor:'#141518',
-      scale:window.devicePixelRatio||1,
-      logging:false,
-      ignoreElements:el2=>el2.id==='sk-info-pop'||el2.id==='sk-tip'
-    });
-    const EW=evolC.width/(window.devicePixelRatio||1);
-    const EH=evolC.height/(window.devicePixelRatio||1);
-    const HDR=inclTitle?52:0;
-    const outW=EW;
-    const outH=HDR+EH+(inclSources?28:0);
-    const offC=document.createElement('canvas');
-    offC.width=outW;offC.height=outH;
-    const ctx=offC.getContext('2d');
-    ctx.fillStyle='#141518';ctx.fillRect(0,0,outW,outH);
-    if(inclTitle){
-      ctx.fillStyle='#ffffff';ctx.font='bold 16px "DM Sans", sans-serif';
-      ctx.fillText('Villejuif — Flux de vote (Évolutions)',16,28);
-      ctx.fillStyle='#b8282e';ctx.font='600 11px "DM Sans", sans-serif';
-      const eidA=document.getElementById('ev-a')?.value||'';
-      const eidB=document.getElementById('ev-b')?.value||'';
-      const elA=ELECTIONS.find(e=>e.id===eidA);
-      const elB=ELECTIONS.find(e=>e.id===eidB);
-      ctx.fillText(`${elA?.label||eidA}  →  ${elB?.label||eidB}`,16,46);
-    }
-    ctx.drawImage(evolC,0,HDR,EW,EH);
-    if(inclSources){
-      ctx.fillStyle='rgba(255,255,255,0.2)';ctx.font='10px "DM Sans", sans-serif';
-      ctx.fillText('Sources : Ministère de l\'Intérieur · Ville de Villejuif · Méthode : OLS écologique',16,outH-10);
-    }
-    return offC;
-  }
-  return null;
-}
-
-async function runExport(fmt){
-  const btns=document.querySelectorAll('.exp-fmt-btn');
-  const prog=document.getElementById('exp-progress');
-  btns.forEach(b=>{b.disabled=true;});
-  prog.style.display='block';
-  prog.textContent='Génération en cours…';
-  try{
-    const canvas=await buildExportCanvas(fmt);
-    if(!canvas){prog.textContent='Erreur : cible introuvable.';return;}
-    const filename=(document.getElementById('exp-filename').value||'villejuif_export')+'.'+fmt;
-    if(fmt==='png'){
-      prog.textContent='Téléchargement PNG…';
-      canvas.toBlob(blob=>{
-        const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob);
-        a.download=filename;
-        a.click();
-        setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-        prog.textContent='✓ PNG exporté';
-        setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},2000);
-      },'image/png');
-    }else{
-      prog.textContent='Génération PDF…';
-      const{jsPDF}=window.jspdf;
-      const W=canvas.width,H=canvas.height;
-      const orientation=W>H?'l':'p';
-      const pdf=new jsPDF({orientation,unit:'px',format:[W,H],hotfixes:['px_scaling']});
-      pdf.addImage(canvas.toDataURL('image/png',0.95),0,0,W,H,'','FAST');
-      pdf.save(filename);
-      prog.textContent='✓ PDF exporté';
-      setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},2000);
-    }
-  }catch(err){
-    console.error('Export error',err);
-    prog.textContent='⚠ Erreur lors de l\'export.';
-    setTimeout(()=>{prog.style.display='none';btns.forEach(b=>b.disabled=false);},3000);
-  }
-}
+  return {
+    view,
+    mode,
+    modeLabel: curCand ? ('Score — ' + cname(curCand)) : (modeLbls[mode] || mode),
+    modeSlug:  modeSlugs[mode] || mode,
+    election:  el,
+    candidates: cands(),
+    data:      CUR_DATA || [],
+    mapCanvas: (typeof map !== 'undefined' && map) ? map.getCanvas() : null,
+    // Candidate mode extras
+    candName:  curCand ? cname(curCand) : null,
+    candColor: curCand ? ccolor(curCand) : null,
+    candAvg:   _candLegendState ? _candLegendState.avg : null,
+    candMax:   _candLegendState ? _candLegendState.mx  : null,
+    // Winner counts for legend
+    bvWinnerCounts: (()=>{
+      const counts = {};
+      (CUR_DATA||[]).forEach(r=>{ const bv=computeBV(r); if(bv.winner) counts[bv.winner.nuance]=(counts[bv.winner.nuance]||0)+1; });
+      return counts;
+    })(),
+    // Evol
+    evolEidA: document.getElementById('ev-a')?.value,
+    evolEidB: document.getElementById('ev-b')?.value,
+    evolElA:  ELECTIONS.find(e=>e.id===document.getElementById('ev-a')?.value),
+    evolElB:  ELECTIONS.find(e=>e.id===document.getElementById('ev-b')?.value),
+  };
+};
 
 /* ── map init ── */
 async function init(){
