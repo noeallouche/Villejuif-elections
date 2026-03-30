@@ -7,7 +7,7 @@
 'use strict';
 
 /* ── A4 @ 150 dpi ───────────────────────────────────────────────────────── */
-const DPI = 150, MM = DPI / 25.4;
+const DPI = 150, MM = DPI / 25.4, PT = DPI / 72;
 const A4L = { w: Math.round(297*MM), h: Math.round(210*MM) }; // paysage
 const A4P = { w: Math.round(210*MM), h: Math.round(297*MM) }; // portrait
 const MAR = Math.round(12*MM);  // marge
@@ -51,35 +51,35 @@ function drawHeader(ctx, election, modeLabel, canvasW){
   const x = MAR, y = MAR;
   // Filet rouge vertical
   ctx.fillStyle = ACC;
-  ctx.fillRect(x, y, 4, Math.round(3.2*MM));
+  ctx.fillRect(x, y, 4, Math.round(9*MM));
   // "Villejuif"
   ctx.fillStyle = TXT;
-  ctx.font = `bold ${Math.round(1.55*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('Villejuif', x+Math.round(0.8*MM), y+Math.round(1.6*MM));
+  ctx.font = `bold ${Math.round(16*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('Villejuif', x+Math.round(10*PT), y+Math.round(5*MM));
   const vw = ctx.measureText('Villejuif').width;
   // "élections" en italique rouge
   ctx.fillStyle = ACC;
-  ctx.font = `italic bold ${Math.round(1.55*MM)}px Cormorant Garamond,Georgia,serif`;
-  ctx.fillText('\u00e9lections', x+Math.round(0.8*MM)+vw, y+Math.round(1.6*MM));
+  ctx.font = `italic bold ${Math.round(16*PT)}px Cormorant Garamond,Georgia,serif`;
+  ctx.fillText('\u00e9lections', x+Math.round(10*PT)+vw, y+Math.round(5*MM));
   // Sous-titre
   ctx.fillStyle = TXT3;
-  ctx.font = `${Math.round(0.72*MM)}px DM Sans,sans-serif`;
+  ctx.font = `${Math.round(9*PT)}px DM Sans,sans-serif`;
   const sub = [modeLabel, election.label, election.date].filter(Boolean).join('  \u00b7  ');
-  ctx.fillText(sub, x+Math.round(0.8*MM), y+Math.round(2.8*MM));
+  ctx.fillText(sub, x+Math.round(10*PT), y+Math.round(8*MM));
   // Filet séparateur
-  const lineY = y + Math.round(3.8*MM);
+  const lineY = y + Math.round(11*MM);
   ctx.strokeStyle = BORD; ctx.lineWidth = 0.75;
   ctx.beginPath(); ctx.moveTo(x, lineY); ctx.lineTo(canvasW-MAR, lineY); ctx.stroke();
-  return lineY + Math.round(1.2*MM);
+  return lineY + Math.round(4*MM);
 }
 
 /* ── Pied de page sources ────────────────────────────────────────────────── */
 function drawFooter(ctx, text, canvasW, canvasH){
   const y = canvasH - MAR;
   ctx.strokeStyle = BORD; ctx.lineWidth = 0.5;
-  ctx.beginPath(); ctx.moveTo(MAR, y-Math.round(0.8*MM)); ctx.lineTo(canvasW-MAR, y-Math.round(0.8*MM)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(MAR, y-Math.round(10*PT)); ctx.lineTo(canvasW-MAR, y-Math.round(10*PT)); ctx.stroke();
   ctx.fillStyle = TXT3;
-  ctx.font = `${Math.round(0.52*MM)}px DM Sans,sans-serif`;
+  ctx.font = `${Math.round(7*PT)}px DM Sans,sans-serif`;
   ctx.fillText('Sources\u202f: ' + text, MAR, y);
   ctx.fillText('Observatoire \u00e9lectoral \u00b7 Villejuif', canvasW-MAR-ctx.measureText('Observatoire \u00e9lectoral \u00b7 Villejuif').width, y);
 }
@@ -132,7 +132,7 @@ async function renderMap(state, opts){
     roundRect(ctx, mapX, y, dw, dh, 4); ctx.stroke();
   } else {
     ctx.fillStyle = BG3; roundRect(ctx, mapX, y, mapW, mapH, 4); ctx.fill();
-    ctx.fillStyle = TXT3; ctx.font = `${Math.round(0.8*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle = TXT3; ctx.font = `${Math.round(10*PT)}px DM Sans,sans-serif`;
     ctx.fillText('Carte non disponible', mapX+Math.round(2*MM), y+Math.round(4*MM));
   }
 
@@ -156,18 +156,18 @@ function drawStatBox(ctx, state, x, y, w){
     ['Participation', fP(part)],
     ['Exprim\u00e9s', fN(exp)],
   ];
-  const rowH = Math.round(1.3*MM), pad = Math.round(0.7*MM);
-  const boxH = pad*2 + Math.round(0.9*MM) + rows.length*rowH;
+  const rowH = Math.round(4*MM), pad = Math.round(2.2*MM);
+  const boxH = pad*2 + Math.round(3*MM) + rows.length*rowH;
   ctx.fillStyle = BG2; roundRect(ctx,x,y,w,boxH,4); ctx.fill();
   ctx.strokeStyle = BORD; ctx.lineWidth = 0.5; ctx.stroke();
-  ctx.fillStyle = ACC; ctx.font = `600 ${Math.round(0.55*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('CHIFFRES CL\u00c9S', x+pad, y+pad+Math.round(0.55*MM));
+  ctx.fillStyle = ACC; ctx.font = `600 ${Math.round(7*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('CHIFFRES CL\u00c9S', x+pad, y+pad+Math.round(7*PT));
   rows.forEach(([lbl,val],i)=>{
-    const ry = y+pad+Math.round(0.9*MM)+i*rowH;
+    const ry = y+pad+Math.round(3*MM)+i*rowH;
     if(i>0){ ctx.strokeStyle=BORD; ctx.lineWidth=0.4; ctx.beginPath(); ctx.moveTo(x+pad,ry); ctx.lineTo(x+w-pad,ry); ctx.stroke(); }
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.65*MM)}px DM Sans,sans-serif`; ctx.fillText(lbl, x+pad, ry+Math.round(0.85*MM));
-    ctx.fillStyle=TXT; ctx.font=`500 ${Math.round(0.72*MM)}px DM Sans,sans-serif`;
-    ctx.fillText(val, x+w-pad-ctx.measureText(val).width, ry+Math.round(0.85*MM));
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(8*PT)}px DM Sans,sans-serif`; ctx.fillText(lbl, x+pad, ry+Math.round(10*PT));
+    ctx.fillStyle=TXT; ctx.font=`500 ${Math.round(9*PT)}px DM Sans,sans-serif`;
+    ctx.fillText(val, x+w-pad-ctx.measureText(val).width, ry+Math.round(10*PT));
   });
   return y+boxH+Math.round(1*MM);
 }
@@ -175,11 +175,11 @@ function drawStatBox(ctx, state, x, y, w){
 /* Légende selon mode */
 function drawMapLegend(ctx, state, x, y, maxW){
   const { mode, candidates, bvWinnerCounts, candName, candColor, candAvg, candMax } = state;
-  const pad = Math.round(0.7*MM), lineH = Math.round(1.25*MM);
-  const fsT = Math.round(0.55*MM), fsL = Math.round(0.68*MM);
+  const pad = Math.round(2.2*MM), lineH = Math.round(4*MM);
+  const fsT = Math.round(7*PT), fsL = Math.round(9*PT);
 
   function gradBox(title, colors, labels){
-    const bh = Math.round(0.65*MM), boxH = pad*2 + Math.round(0.9*MM) + bh + Math.round(1.1*MM);
+    const bh = Math.round(8*PT), boxH = pad*2 + Math.round(3*MM) + bh + Math.round(12*PT);
     ctx.fillStyle=BG2; roundRect(ctx,x,y,maxW,boxH,4); ctx.fill();
     ctx.strokeStyle=BORD; ctx.lineWidth=0.5; ctx.stroke();
     ctx.fillStyle=ACC; ctx.font=`600 ${fsT}px DM Sans,sans-serif`;
@@ -188,10 +188,10 @@ function drawMapLegend(ctx, state, x, y, maxW){
     const grd=ctx.createLinearGradient(bx,0,bx+bw,0);
     colors.forEach((col,i)=>grd.addColorStop(i/(colors.length-1),col));
     ctx.fillStyle=grd; roundRect(ctx,bx,by,bw,bh,2); ctx.fill();
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.48*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(7*PT)}px DM Sans,sans-serif`;
     labels.forEach((l,i)=>{
       const lx=bx+i/(labels.length-1)*bw, tw=ctx.measureText(l).width;
-      ctx.fillText(l, i===0?lx:i===labels.length-1?lx-tw:lx-tw/2, by+bh+Math.round(0.85*MM));
+      ctx.fillText(l, i===0?lx:i===labels.length-1?lx-tw:lx-tw/2, by+bh+Math.round(10*PT));
     });
     y += boxH + Math.round(1.5*MM);
   }
@@ -201,8 +201,8 @@ function drawMapLegend(ctx, state, x, y, maxW){
   if(mode==='frag'){ gradBox('FRAGMENTATION',['#00C853','#9C27B0'],['Faible','Élev\u00e9']); return y; }
 
   if(candName && candColor){
-    const avg=candAvg||0, max=candMax||1, bh=Math.round(0.65*MM);
-    const boxH=pad*2+Math.round(1*MM)+bh+Math.round(1.1*MM);
+    const avg=candAvg||0, max=candMax||1, bh=Math.round(8*PT);
+    const boxH=pad*2+Math.round(1*MM)+bh+Math.round(12*PT);
     ctx.fillStyle=BG2; roundRect(ctx,x,y,maxW,boxH,4); ctx.fill();
     ctx.strokeStyle=BORD; ctx.lineWidth=0.5; ctx.stroke();
     const short=candName.length>20?candName.slice(0,18)+'\u2026':candName;
@@ -215,12 +215,12 @@ function drawMapLegend(ctx, state, x, y, maxW){
     const mx2=bx+avgR*bw;
     ctx.strokeStyle=candColor; ctx.lineWidth=1.2;
     ctx.beginPath(); ctx.moveTo(mx2,by-1); ctx.lineTo(mx2,by+bh+1); ctx.stroke();
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.48*MM)}px DM Sans,sans-serif`;
-    ctx.fillText('0 %',bx,by+bh+Math.round(0.85*MM));
-    ctx.fillStyle=candColor; ctx.font=`bold ${Math.round(0.48*MM)}px DM Sans,sans-serif`;
-    const al='\u25bc moy. '+fP(avg); ctx.fillText(al,mx2-ctx.measureText(al).width/2,by+bh+Math.round(0.85*MM));
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.48*MM)}px DM Sans,sans-serif`;
-    const ml=fP(max); ctx.fillText(ml,bx+bw-ctx.measureText(ml).width,by+bh+Math.round(0.85*MM));
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(7*PT)}px DM Sans,sans-serif`;
+    ctx.fillText('0 %',bx,by+bh+Math.round(10*PT));
+    ctx.fillStyle=candColor; ctx.font=`bold ${Math.round(7*PT)}px DM Sans,sans-serif`;
+    const al='\u25bc moy. '+fP(avg); ctx.fillText(al,mx2-ctx.measureText(al).width/2,by+bh+Math.round(10*PT));
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(7*PT)}px DM Sans,sans-serif`;
+    const ml=fP(max); ctx.fillText(ml,bx+bw-ctx.measureText(ml).width,by+bh+Math.round(10*PT));
     y+=boxH+Math.round(1.5*MM);
     return y;
   }
@@ -228,7 +228,7 @@ function drawMapLegend(ctx, state, x, y, maxW){
   /* Liste en tête */
   const entries = Object.entries(bvWinnerCounts||{}).sort((a,b)=>b[1]-a[1]);
   if(!entries.length) return y;
-  const boxH = pad*2 + Math.round(0.9*MM) + entries.length*lineH;
+  const boxH = pad*2 + Math.round(3*MM) + entries.length*lineH;
   ctx.fillStyle=BG2; roundRect(ctx,x,y,maxW,boxH,4); ctx.fill();
   ctx.strokeStyle=BORD; ctx.lineWidth=0.5; ctx.stroke();
   ctx.fillStyle=ACC; ctx.font=`600 ${fsT}px DM Sans,sans-serif`;
@@ -236,14 +236,14 @@ function drawMapLegend(ctx, state, x, y, maxW){
   entries.forEach(([nuance,count],i)=>{
     const cand = (state.candidates||[]).find(c=>c.nuance===nuance);
     const col = cand?.color||'#888';
-    const iy = y+pad+Math.round(0.9*MM)+i*lineH;
+    const iy = y+pad+Math.round(3*MM)+i*lineH;
     if(i>0){ ctx.strokeStyle=BORD; ctx.lineWidth=0.35; ctx.beginPath(); ctx.moveTo(x+pad,iy); ctx.lineTo(x+maxW-pad,iy); ctx.stroke(); }
-    ctx.fillStyle=col; roundRect(ctx,x+pad,iy+Math.round(0.15*MM),Math.round(0.7*MM),Math.round(0.7*MM),2); ctx.fill();
+    ctx.fillStyle=col; roundRect(ctx,x+pad,iy+Math.round(0.5*MM),Math.round(2.2*MM),Math.round(2.2*MM),2); ctx.fill();
     ctx.fillStyle=TXT; ctx.font=`${fsL}px DM Sans,sans-serif`;
     const nm=(cand?.nom||nuance).length>22?(cand?.nom||nuance).slice(0,20)+'\u2026':(cand?.nom||nuance);
-    ctx.fillText(nm, x+pad+Math.round(1*MM), iy+Math.round(0.75*MM));
+    ctx.fillText(nm, x+pad+Math.round(1*MM), iy+Math.round(9*PT));
     ctx.fillStyle=TXT3; ctx.font=`${fsT}px DM Sans,sans-serif`;
-    const cs=count+' BV'; ctx.fillText(cs, x+maxW-pad-ctx.measureText(cs).width, iy+Math.round(0.75*MM));
+    const cs=count+' BV'; ctx.fillText(cs, x+maxW-pad-ctx.measureText(cs).width, iy+Math.round(9*PT));
   });
   return y+boxH+Math.round(1.5*MM);
 }
@@ -265,7 +265,7 @@ async function renderPanel(state, opts){
   const { ins, vot, part, exp, lists } = agg;
 
   y = drawKPIs(ctx, ins, part, exp, MAR, y, cw);
-  y += Math.round(0.6*MM);
+  y += Math.round(2*MM);
   y = drawBalanceBar(ctx, lists, exp, MAR, y, cw);
   y += Math.round(1*MM);
 
@@ -286,7 +286,7 @@ async function renderPanel(state, opts){
 
 /* KPIs */
 function drawKPIs(ctx, ins, part, exp, x, y, totalW){
-  const kw = Math.floor((totalW-8)/3), kh = Math.round(3.4*MM), r = 4;
+  const kw = Math.floor((totalW-8)/3), kh = Math.round(10*MM), r = 4;
   const items = [
     { v: fN(ins),   l: 'Inscrits' },
     { v: fP(part),  l: 'Participation' },
@@ -296,17 +296,17 @@ function drawKPIs(ctx, ins, part, exp, x, y, totalW){
     const kx = x + i*(kw+4);
     ctx.fillStyle=BG2; roundRect(ctx,kx,y,kw,kh,r); ctx.fill();
     ctx.strokeStyle=BORD; ctx.lineWidth=0.5; ctx.stroke();
-    ctx.fillStyle=TXT; ctx.font=`bold ${Math.round(1.75*MM)}px Cormorant Garamond,Georgia,serif`;
+    ctx.fillStyle=TXT; ctx.font=`bold ${Math.round(18*PT)}px Cormorant Garamond,Georgia,serif`;
     const vw=ctx.measureText(k.v).width; ctx.fillText(k.v, kx+kw/2-vw/2, y+kh*0.56);
-    ctx.fillStyle=TXT3; ctx.font=`600 ${Math.round(0.58*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle=TXT3; ctx.font=`600 ${Math.round(8*PT)}px DM Sans,sans-serif`;
     const lw=ctx.measureText(k.l).width; ctx.fillText(k.l, kx+kw/2-lw/2, y+kh*0.84);
   });
-  return y+kh+Math.round(0.8*MM);
+  return y+kh+Math.round(10*PT);
 }
 
 /* Barre équilibre G/D */
 function drawBalanceBar(ctx, lists, exp, x, y, w){
-  const bh = Math.round(0.65*MM);
+  const bh = Math.round(8*PT);
   const blocs = [
     {key:'ex_gauche',color:'#7B1FA2'},{key:'gauche_rad',color:'#C62828'},
     {key:'gauche',color:'#EC407A'},{key:'centre',color:'#FF8F00'},
@@ -320,28 +320,28 @@ function drawBalanceBar(ctx, lists, exp, x, y, w){
     ctx.fillStyle=bl.color; ctx.fillRect(bx,y,sw,bh); bx+=sw;
   });
   ctx.restore();
-  return y+bh+Math.round(0.6*MM);
+  return y+bh+Math.round(2*MM);
 }
 
 /* ── B1 : Barres horizontales ────────────────────────────────────────────── */
 function drawBars(ctx, lists, exp, x, y, w){
   if(!lists.length) return y;
-  const hdrH = Math.round(0.9*MM), rowH = Math.round(2.1*MM), barH = Math.round(0.75*MM);
-  const badgeW = Math.round(2*MM), pctW = Math.round(3.8*MM), voxW = Math.round(3.6*MM);
-  const gap = Math.round(0.4*MM);
+  const hdrH = Math.round(3.5*MM), rowH = Math.round(6*MM), barH = Math.round(2*MM);
+  const badgeW = Math.round(2*MM), pctW = Math.round(11*MM), voxW = Math.round(3.6*MM);
+  const gap = Math.round(1.2*MM);
   const maxPct = lists[0].pct||1;
   const barAreaW = w - badgeW - pctW - voxW - gap*3;
-  const fs = Math.round(0.75*MM), fsS = Math.round(0.58*MM);
-  ctx.fillStyle=ACC; ctx.font=`600 ${Math.round(0.55*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('R\u00c9SULTATS \u2014 % des exprim\u00e9s', x, y+Math.round(0.65*MM));
-  y += hdrH + Math.round(0.5*MM);
+  const fs = Math.round(9*PT), fsS = Math.round(8*PT);
+  ctx.fillStyle=ACC; ctx.font=`600 ${Math.round(7*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('R\u00c9SULTATS \u2014 % des exprim\u00e9s', x, y+Math.round(8*PT));
+  y += hdrH + Math.round(1.5*MM);
   lists.forEach((l,i)=>{
-    const ry = y + i*(rowH + Math.round(0.3*MM));
+    const ry = y + i*(rowH + Math.round(1*MM));
     if(i>0){ ctx.strokeStyle=BORD; ctx.lineWidth=0.4; ctx.beginPath(); ctx.moveTo(x,ry); ctx.lineTo(x+w,ry); ctx.stroke(); }
     const mid = ry + rowH*0.55;
     // Badge
     ctx.fillStyle=lighten(l.color,0.78); roundRect(ctx,x,ry+rowH*0.12,badgeW,rowH*0.72,2); ctx.fill();
-    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(0.55*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(7*PT)}px DM Sans,sans-serif`;
     const bw=ctx.measureText(l.nuance).width; ctx.fillText(l.nuance, x+badgeW/2-bw/2, mid);
     // Nom
     const nx = x + badgeW + gap;
@@ -360,25 +360,25 @@ function drawBars(ctx, lists, exp, x, y, w){
     const filled = barW2 * l.pct/maxPct;
     ctx.fillStyle=l.color; roundRect(ctx,barX,barY,filled,barH,2); ctx.fill();
     if(filled > Math.round(2*MM)){
-      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.font=`bold ${Math.round(0.52*MM)}px DM Sans,sans-serif`;
-      ctx.fillText(fN(l.voix), barX+Math.round(0.5*MM), barY+barH*0.72);
+      ctx.fillStyle='rgba(255,255,255,0.92)'; ctx.font=`bold ${Math.round(7*PT)}px DM Sans,sans-serif`;
+      ctx.fillText(fN(l.voix), barX+Math.round(1.5*MM), barY+barH*0.72);
     }
     // Pct
     const px2 = x+w-voxW-gap;
-    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(1.05*MM)}px Cormorant Garamond,Georgia,serif`;
-    const pctStr=fP(l.pct); ctx.fillText(pctStr, px2-ctx.measureText(pctStr).width, mid+Math.round(0.15*MM));
+    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(12*PT)}px Cormorant Garamond,Georgia,serif`;
+    const pctStr=fP(l.pct); ctx.fillText(pctStr, px2-ctx.measureText(pctStr).width, mid+Math.round(0.5*MM));
     // Voix si pas dans barre
     if(filled <= Math.round(2*MM)){
       ctx.fillStyle=TXT3; ctx.font=`${fsS}px DM Sans,sans-serif`;
       ctx.fillText(fN(l.voix), x+w-ctx.measureText(fN(l.voix)).width, mid);
     }
   });
-  return y + lists.length*(rowH+Math.round(0.3*MM)) + Math.round(1*MM);
+  return y + lists.length*(rowH+Math.round(1*MM)) + Math.round(1*MM);
 }
 
 /* ── B2 : Donut + tableau (≤3 candidats) ───────────────────────────────── */
 function drawDonut(ctx, lists, exp, ins, vot, x, y, w){
-  const donutSize = Math.round(38*MM);
+  const donutSize = Math.round(50*MM);
   const donutR    = donutSize/2;
   const innerR    = donutR * 0.48;
   const cx2       = x + donutR;
@@ -401,41 +401,41 @@ function drawDonut(ctx, lists, exp, ins, vot, x, y, w){
   ctx.beginPath(); ctx.arc(cx2, cy2, innerR, 0, 2*Math.PI);
   ctx.fillStyle = BG; ctx.fill();
   // Label centre
-  ctx.fillStyle = TXT; ctx.font = `bold ${Math.round(1.4*MM)}px Cormorant Garamond,Georgia,serif`;
-  const ev = fN(exp); ctx.fillText(ev, cx2-ctx.measureText(ev).width/2, cy2+Math.round(0.3*MM));
-  ctx.fillStyle = TXT3; ctx.font = `${Math.round(0.52*MM)}px DM Sans,sans-serif`;
-  const el2 = 'exprim\u00e9s'; ctx.fillText(el2, cx2-ctx.measureText(el2).width/2, cy2+Math.round(1.2*MM));
+  ctx.fillStyle = TXT; ctx.font = `bold ${Math.round(14*PT)}px Cormorant Garamond,Georgia,serif`;
+  const ev = fN(exp); ctx.fillText(ev, cx2-ctx.measureText(ev).width/2, cy2+Math.round(1*MM));
+  ctx.fillStyle = TXT3; ctx.font = `${Math.round(7*PT)}px DM Sans,sans-serif`;
+  const el2 = 'exprim\u00e9s'; ctx.fillText(el2, cx2-ctx.measureText(el2).width/2, cy2+Math.round(4*MM));
 
   // Tableau résultats
-  const hdrH = Math.round(1.1*MM), rowH = Math.round(2.0*MM);
+  const hdrH = Math.round(12*PT), rowH = Math.round(6*MM);
   const colW1=tableW*0.50, colW2=tableW*0.25, colW3=tableW*0.25;
   // En-tête tableau
   ctx.fillStyle=ACC; roundRect(ctx,tableX,y,tableW,hdrH,3); ctx.fill();
-  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.round(0.52*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('Candidat', tableX+Math.round(0.5*MM), y+hdrH*0.72);
+  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.round(7*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('Candidat', tableX+Math.round(1.5*MM), y+hdrH*0.72);
   ctx.fillText('%', tableX+colW1+colW2-ctx.measureText('%').width, y+hdrH*0.72);
-  ctx.fillText('Voix', tableX+tableW-ctx.measureText('Voix').width-Math.round(0.5*MM), y+hdrH*0.72);
+  ctx.fillText('Voix', tableX+tableW-ctx.measureText('Voix').width-Math.round(1.5*MM), y+hdrH*0.72);
   let ry2 = y+hdrH;
   lists.forEach((l,i)=>{
     ctx.fillStyle = i%2===0?BG:BG2; ctx.fillRect(tableX,ry2,tableW,rowH);
     const mid2 = ry2+rowH*0.62;
     // Carré couleur
-    ctx.fillStyle=l.color; roundRect(ctx,tableX+Math.round(0.4*MM),ry2+rowH*0.18,Math.round(0.72*MM),Math.round(0.72*MM),1); ctx.fill();
+    ctx.fillStyle=l.color; roundRect(ctx,tableX+Math.round(1.2*MM),ry2+rowH*0.18,Math.round(9*PT),Math.round(9*PT),1); ctx.fill();
     // Nom
-    ctx.fillStyle=TXT; ctx.font=`${Math.round(0.72*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle=TXT; ctx.font=`${Math.round(9*PT)}px DM Sans,sans-serif`;
     let nm=l.nom; while(nm.length>3&&ctx.measureText(nm).width>colW1-Math.round(1.5*MM)) nm=nm.slice(0,-1);
     if(nm!==l.nom) nm=nm.trim()+'\u2026';
-    ctx.fillText(nm, tableX+Math.round(1.4*MM), mid2);
+    ctx.fillText(nm, tableX+Math.round(14*PT), mid2);
     // Badge nuance
-    ctx.fillStyle=lighten(l.color,0.78); roundRect(ctx,tableX+Math.round(1.4*MM)+ctx.measureText(nm).width+Math.round(0.5*MM),ry2+rowH*0.2,Math.round(1.5*MM),rowH*0.55,2); ctx.fill();
-    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(0.48*MM)}px DM Sans,sans-serif`;
-    ctx.fillText(l.nuance, tableX+Math.round(1.4*MM)+ctx.measureText(nm).width+Math.round(0.55*MM), mid2);
+    ctx.fillStyle=lighten(l.color,0.78); roundRect(ctx,tableX+Math.round(14*PT)+ctx.measureText(nm).width+Math.round(1.5*MM),ry2+rowH*0.2,Math.round(1.5*MM),rowH*0.55,2); ctx.fill();
+    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(7*PT)}px DM Sans,sans-serif`;
+    ctx.fillText(l.nuance, tableX+Math.round(14*PT)+ctx.measureText(nm).width+Math.round(7*PT), mid2);
     // Pct
-    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(1.05*MM)}px Cormorant Garamond,Georgia,serif`;
+    ctx.fillStyle=l.color; ctx.font=`bold ${Math.round(12*PT)}px Cormorant Garamond,Georgia,serif`;
     const ps=fP(l.pct); ctx.fillText(ps, tableX+colW1+colW2-ctx.measureText(ps).width, mid2+Math.round(0.1*MM));
     // Voix
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.62*MM)}px DM Sans,sans-serif`;
-    const vs=fN(l.voix); ctx.fillText(vs, tableX+tableW-ctx.measureText(vs).width-Math.round(0.4*MM), mid2);
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(8*PT)}px DM Sans,sans-serif`;
+    const vs=fN(l.voix); ctx.fillText(vs, tableX+tableW-ctx.measureText(vs).width-Math.round(1.2*MM), mid2);
     // Séparateur
     ctx.strokeStyle=BORD; ctx.lineWidth=0.4;
     ctx.beginPath(); ctx.moveTo(tableX,ry2+rowH); ctx.lineTo(tableX+tableW,ry2+rowH); ctx.stroke();
@@ -443,14 +443,14 @@ function drawDonut(ctx, lists, exp, ins, vot, x, y, w){
   });
 
   // Barre participation sous le tableau
-  ry2 += Math.round(1.2*MM);
-  const bw2 = tableW, bh2 = Math.round(0.55*MM);
+  ry2 += Math.round(4*MM);
+  const bw2 = tableW, bh2 = Math.round(7*PT);
   const partFrac = ins>0?vot/ins:0;
-  ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.58*MM)}px DM Sans,sans-serif`;
+  ctx.fillStyle=TXT3; ctx.font=`${Math.round(8*PT)}px DM Sans,sans-serif`;
   ctx.fillText('Participation', tableX, ry2);
-  ctx.fillStyle=TXT; ctx.font=`500 ${Math.round(0.65*MM)}px DM Sans,sans-serif`;
+  ctx.fillStyle=TXT; ctx.font=`500 ${Math.round(8*PT)}px DM Sans,sans-serif`;
   const pv=fP(partFrac*100); ctx.fillText(pv, tableX+bw2-ctx.measureText(pv).width, ry2);
-  ry2+=Math.round(0.85*MM);
+  ry2+=Math.round(10*PT);
   ctx.fillStyle=BG3; roundRect(ctx,tableX,ry2,bw2,bh2,2); ctx.fill();
   ctx.fillStyle=ACC; roundRect(ctx,tableX,ry2,bw2*partFrac,bh2,2); ctx.fill();
 
@@ -461,19 +461,19 @@ function drawDonut(ctx, lists, exp, ins, vot, x, y, w){
 /* ── Tableau données brutes ─────────────────────────────────────────────── */
 function drawTable(ctx, data, candidates, x, y, w){
   if(!data||!data.length) return y;
-  ctx.fillStyle=ACC; ctx.font=`600 ${Math.round(0.58*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('DONN\u00c9ES BRUTES PAR BUREAU DE VOTE', x, y+Math.round(0.7*MM));
-  y += Math.round(1.6*MM);
+  ctx.fillStyle=ACC; ctx.font=`600 ${Math.round(8*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('DONN\u00c9ES BRUTES PAR BUREAU DE VOTE', x, y+Math.round(2.2*MM));
+  y += Math.round(5*MM);
 
   const fixCols=['BV','Inscrits','Votants','Part.%','Expr.'];
-  const fixW=[Math.round(1.2*MM),Math.round(2.3*MM),Math.round(2.3*MM),Math.round(1.9*MM),Math.round(2.2*MM)];
+  const fixW=[Math.round(4*MM),Math.round(2.3*MM),Math.round(2.3*MM),Math.round(1.9*MM),Math.round(2.2*MM)];
   const fixTot=fixW.reduce((a,b)=>a+b,0)+fixCols.length*2;
-  const candW=Math.max(Math.round(2.1*MM),Math.floor((w-fixTot)/candidates.length-2));
+  const candW=Math.max(Math.round(6*MM),Math.floor((w-fixTot)/candidates.length-2));
   const colW=[...fixW,...candidates.map(()=>candW)];
   const allCols=[...fixCols,...candidates.map(c=>c.nuance)];
   const totalW=colW.reduce((a,b)=>a+b,0)+allCols.length*2;
   const scale=Math.min(1, w/totalW);
-  const rowH=Math.round(0.88*MM), hdrH=Math.round(1.05*MM), fs=Math.round(0.50*MM);
+  const rowH=Math.round(3.5*MM), hdrH=Math.round(12*PT), fs=Math.round(7*PT);
 
   ctx.save();
   ctx.translate(x, 0); ctx.scale(scale, 1);
@@ -530,7 +530,7 @@ async function renderEvol(state, opts){
   if(hasSankey){
     await drawSankeyRebuild(ctx, svgEl, state, MAR, y, w-MAR*2, h-y-MAR-(opts.sources?Math.round(5*MM):0));
   } else {
-    ctx.fillStyle=TXT3; ctx.font=`${Math.round(0.85*MM)}px DM Sans,sans-serif`;
+    ctx.fillStyle=TXT3; ctx.font=`${Math.round(10*PT)}px DM Sans,sans-serif`;
     ctx.fillText("Affichez d\u2019abord la vue \u00c9volutions dans l\u2019application, puis exportez.", MAR, y+Math.round(5*MM));
   }
 
@@ -543,9 +543,9 @@ async function renderEvol(state, opts){
   const noteW = w - MAR*2;
   ctx.fillStyle=BG2; roundRect(ctx,MAR,noteY,noteW,Math.round(3*MM),3); ctx.fill();
   ctx.strokeStyle=BORD; ctx.lineWidth=0.5; ctx.stroke();
-  ctx.fillStyle=TXT3; ctx.font=`italic ${Math.round(0.52*MM)}px DM Sans,sans-serif`;
-  ctx.fillText('\u26a0\ufe0f  Les flux affich\u00e9s sont des estimations statistiques (r\u00e9gression OLS \u00e9cologique sur les bureaux de vote communs),', MAR+Math.round(0.6*MM), noteY+Math.round(1.3*MM));
-  ctx.fillText('pas des comportements individuels observ\u00e9s. Largeur des bandes \u221d volumes de transferts estim\u00e9s.', MAR+Math.round(0.6*MM), noteY+Math.round(2.3*MM));
+  ctx.fillStyle=TXT3; ctx.font=`italic ${Math.round(7*PT)}px DM Sans,sans-serif`;
+  ctx.fillText('\u26a0\ufe0f  Les flux affich\u00e9s sont des estimations statistiques (r\u00e9gression OLS \u00e9cologique sur les bureaux de vote communs),', MAR+Math.round(2*MM), noteY+Math.round(1.3*MM));
+  ctx.fillText('pas des comportements individuels observ\u00e9s. Largeur des bandes \u221d volumes de transferts estim\u00e9s.', MAR+Math.round(2*MM), noteY+Math.round(2.3*MM));
 
   return c;
 }
